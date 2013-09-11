@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/kr/s3"
-	"github.com/wurkhappy/WH-UserService/DB"
-	"github.com/wurkhappy/WH-UserService/models"
-	"log"
+	"github.com/wurkhappy/WH-Agreements/DB"
+	"github.com/wurkhappy/WH-Agreements/models"
 	"net/http"
 	"time"
 )
@@ -19,12 +16,12 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
-	json.Unmarshal(buf.Bytes(), &user)
+	json.Unmarshal(buf.Bytes(), &agreement)
 
-	agreement.SaveUserWithCtx(ctx)
+	agreement.SaveAgreementWithCtx(ctx)
 
-	u, _ := json.Marshal(user)
-	w.Write(u)
+	a, _ := json.Marshal(agreement)
+	w.Write(a)
 }
 
 func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
@@ -37,10 +34,10 @@ func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
 }
 
-func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	//unmarshal json into agreement struct so we have easy access to the ID field
 	//with ID we pull the agreement from the DB, update it with the json and then set it's date modified field
-	a := new(Agreement)
+	a := new(models.Agreement)
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
@@ -51,14 +48,14 @@ func UpdateUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	json.Unmarshal(buf.Bytes(), &agreement)
 	agreement.LastModified = time.Now()
 
-	agreement.SaveUserWithCtx(ctx)
+	agreement.SaveAgreementWithCtx(ctx)
 
 	jsonString, _ := json.Marshal(agreement)
 	w.Write(jsonString)
 
 }
 
-func DeleteUser(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 	models.DeleteAgreementWithID(id, ctx)

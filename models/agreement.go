@@ -1,9 +1,7 @@
 package models
 
 import (
-	"code.google.com/p/go.crypto/bcrypt"
-	"crypto/rand"
-	"github.com/wurkhappy/WH-UserService/DB"
+	"github.com/wurkhappy/WH-Agreements/DB"
 	"labix.org/v2/mgo/bson"
 	"log"
 	"time"
@@ -21,29 +19,33 @@ type Agreement struct {
 	Status       *status
 }
 
-func NewAgreement() *User {
-	return &User{
+func NewAgreement() *Agreement {
+	return &Agreement{
 		DateCreated:  time.Now(),
 		LastModified: time.Now(),
 		ID:           bson.NewObjectId(),
 	}
 }
 
-func (u *User) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
+func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	coll := ctx.Database.C("agreements")
-	if _, err := coll.UpsertId(u.ID, &u); err != nil {
+	if _, err := coll.UpsertId(a.ID, &a); err != nil {
 		return err
 	}
 	return nil
 }
 
-func FindAgreementByID(id interface{}, ctx *DB.Context) (u *User, err error) {
-	switch 
-	err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&u)
+func FindAgreementByID(id interface{}, ctx *DB.Context) (a *Agreement, err error) {
+	switch id.(type){
+	case string:
+		err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id.(string))}).One(&a)
+	case bson.ObjectId:
+		err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
+	}
 	if err != nil {
 		return nil, err
 	}
-	return u, nil
+	return a, nil
 }
 
 func DeleteAgreementWithID(id string, ctx *DB.Context) (err error) {

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/wurkhappy/WH-UserService/DB"
-	"github.com/wurkhappy/WH-UserService/handlers"
+	"github.com/wurkhappy/WH-Agreements/DB"
+	"github.com/wurkhappy/WH-Agreements/handlers"
 	"labix.org/v2/mgo"
 	"net/http"
 )
@@ -21,11 +21,10 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
-	r.Handle("/user", dbContextMixIn(handlers.CreateUser)).Methods("POST")
-	r.Handle("/auth/login", dbContextMixIn(handlers.Login)).Methods("POST")
-	r.Handle("/user/{id}", dbContextMixIn(handlers.UpdateUser)).Methods("PUT")
-	r.Handle("/user/{id}", dbContextMixIn(handlers.DeleteUser)).Methods("DELETE")
-	r.Handle("/user/{id}", dbContextMixIn(handlers.GetUser)).Methods("GET")
+	r.Handle("/agreements", dbContextMixIn(handlers.CreateAgreement)).Methods("POST")
+	r.Handle("/agreements/{id}", dbContextMixIn(handlers.UpdateAgreement)).Methods("PUT")
+	r.Handle("/agreements/{id}", dbContextMixIn(handlers.DeleteAgreement)).Methods("DELETE")
+	r.Handle("/agreements/{id}", dbContextMixIn(handlers.GetAgreement)).Methods("GET")
 	http.Handle("/", r)
 
 	http.ListenAndServe(":3000", nil)
