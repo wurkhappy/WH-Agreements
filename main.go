@@ -27,7 +27,7 @@ func main() {
 	r.Handle("/agreements/{id}", dbContextMixIn(handlers.GetAgreement)).Methods("GET")
 	http.Handle("/", r)
 
-	http.ListenAndServe(":3000", nil)
+	http.ListenAndServe(":4050", nil)
 }
 
 type dbContextMixIn func(http.ResponseWriter, *http.Request, *DB.Context)
