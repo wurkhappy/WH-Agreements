@@ -8,7 +8,6 @@ import (
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
 	"net/http"
-	"time"
 )
 
 func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
@@ -16,11 +15,12 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
-	json.Unmarshal(buf.Bytes(), &agreement)
+	agreement.UnmarshalJSON(buf.Bytes())
+	// json.Unmarshal(buf.Bytes(), &agreement)
 
 	agreement.SaveAgreementWithCtx(ctx)
 
-	a, _ := json.Marshal(agreement)
+	a, _ := agreement.GetJSON()
 	w.Write(a)
 }
 
@@ -43,10 +43,9 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf.ReadFrom(req.Body)
 	json.Unmarshal(buf.Bytes(), &a)
 
-	agreement, _ := models.FindAgreementByID(a.ID, ctx)
+	agreement, _ := models.FindAgreementByID(a.GetID(), ctx)
 
 	json.Unmarshal(buf.Bytes(), &agreement)
-	agreement.LastModified = time.Now()
 
 	agreement.SaveAgreementWithCtx(ctx)
 

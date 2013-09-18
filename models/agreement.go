@@ -1,42 +1,70 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"labix.org/v2/mgo/bson"
 	"log"
 	"time"
 )
 
-type Agreement struct {
-	ID           bson.ObjectId `bson:"_id"`
-	ClientID     bson.ObjectId `bson:"_id"`
-	FreelancerID bson.ObjectId `bson:"_id"`
-	Title        string
-	Description  []string
-	Payments     []*Payment
+type agmtPrivateFields struct {
+	ID           bson.ObjectId `json:"id" bson:"_id"`
+	ClientID     bson.ObjectId `json:"clientID" bson:"_id"`
+	FreelancerID bson.ObjectId `json:"freelancerID" bson:"_id"`
+	Title        string        `json:"title"`
+	Description  string        `json:"description"`
+	Payments     []*Payment    `json:"payments"`
 	DateCreated  time.Time
 	LastModified time.Time
-	Status       *status
+	Status       *status `json:"status`
+}
+
+type Agreement struct {
+	agmtPrivateFields
 }
 
 func NewAgreement() *Agreement {
 	return &Agreement{
-		DateCreated:  time.Now(),
-		LastModified: time.Now(),
-		ID:           bson.NewObjectId(),
+		agmtPrivateFields{
+			DateCreated:  time.Now(),
+			LastModified: time.Now(),
+			ID:           bson.NewObjectId(),
+		},
 	}
 }
 
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
+	a.agmtPrivateFields.LastModified = time.Now()
 	coll := ctx.Database.C("agreements")
-	if _, err := coll.UpsertId(a.ID, &a); err != nil {
+	if _, err := coll.UpsertId(a.agmtPrivateFields.ID, &a); err != nil {
 		return err
 	}
 	return nil
 }
 
+func (a *Agreement) GetID() (id bson.ObjectId) {
+	return a.agmtPrivateFields.ID
+}
+
+func (a *Agreement) GetJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"id":           a.agmtPrivateFields.ID,
+		"clientID":     a.agmtPrivateFields.ClientID,
+		"freelancerID": a.agmtPrivateFields.FreelancerID,
+		"title":        a.agmtPrivateFields.Title,
+		"description":  a.agmtPrivateFields.Description,
+		"payments":     a.agmtPrivateFields.Payments,
+		"status":       a.agmtPrivateFields.Status,
+	})
+}
+
+func (a *Agreement) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &a.agmtPrivateFields)
+}
+
 func FindAgreementByID(id interface{}, ctx *DB.Context) (a *Agreement, err error) {
-	switch id.(type){
+	switch id.(type) {
 	case string:
 		err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id.(string))}).One(&a)
 	case bson.ObjectId:
