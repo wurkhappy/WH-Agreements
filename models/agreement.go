@@ -9,15 +9,16 @@ import (
 )
 
 type agmtPrivateFields struct {
-	ID           bson.ObjectId `json:"id" bson:"_id"`
-	ClientID     bson.ObjectId `json:"clientID" bson:"_id"`
-	FreelancerID bson.ObjectId `json:"freelancerID" bson:"_id"`
-	Title        string        `json:"title"`
-	Description  string        `json:"description"`
-	Payments     []*Payment    `json:"payments"`
-	DateCreated  time.Time
-	LastModified time.Time
-	Status       *status `json:"status`
+	ID               bson.ObjectId `json:"id" bson:"_id"`
+	ClientID         bson.ObjectId `json:"clientID" bson:"_id"`
+	FreelancerID     bson.ObjectId `json:"freelancerID" bson:"_id"`
+	Title            string        `json:"title"`
+	ProposedServices string        `json:"proposedServices"`
+	RefundPolicy     string        `json:"refundPolicy"`
+	Payments         []*Payment    `json:"payments"`
+	DateCreated      time.Time
+	LastModified     time.Time
+	Status           *status `json:"status`
 }
 
 type Agreement struct {
@@ -49,13 +50,14 @@ func (a *Agreement) GetID() (id bson.ObjectId) {
 
 func (a *Agreement) GetJSON() ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
-		"id":           a.agmtPrivateFields.ID,
-		"clientID":     a.agmtPrivateFields.ClientID,
-		"freelancerID": a.agmtPrivateFields.FreelancerID,
-		"title":        a.agmtPrivateFields.Title,
-		"description":  a.agmtPrivateFields.Description,
-		"payments":     a.agmtPrivateFields.Payments,
-		"status":       a.agmtPrivateFields.Status,
+		"id":               a.agmtPrivateFields.ID,
+		"clientID":         a.agmtPrivateFields.ClientID,
+		"freelancerID":     a.agmtPrivateFields.FreelancerID,
+		"title":            a.agmtPrivateFields.Title,
+		"proposedServices": a.agmtPrivateFields.ProposedServices,
+		"refundPolicy":     a.agmtPrivateFields.RefundPolicy,
+		"payments":         a.agmtPrivateFields.Payments,
+		"status":           a.agmtPrivateFields.Status,
 	})
 }
 
