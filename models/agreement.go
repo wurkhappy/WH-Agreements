@@ -10,8 +10,8 @@ import (
 
 type agmtPrivateFields struct {
 	ID               bson.ObjectId `json:"id" bson:"_id"`
-	ClientID         bson.ObjectId `json:"clientID" bson:"_id"`
-	FreelancerID     bson.ObjectId `json:"freelancerID" bson:"_id"`
+	ClientID         string        `json:"clientID"`
+	FreelancerID     string        `json:"freelancerID"`
 	Title            string        `json:"title"`
 	ProposedServices string        `json:"proposedServices"`
 	RefundPolicy     string        `json:"refundPolicy"`
@@ -38,7 +38,7 @@ func NewAgreement() *Agreement {
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	a.agmtPrivateFields.LastModified = time.Now()
 	coll := ctx.Database.C("agreements")
-	if _, err := coll.UpsertId(a.agmtPrivateFields.ID, &a); err != nil {
+	if _, err := coll.UpsertId(a.agmtPrivateFields.ID, &a.agmtPrivateFields); err != nil {
 		return err
 	}
 	return nil
@@ -66,15 +66,21 @@ func (a *Agreement) UnmarshalJSON(b []byte) error {
 }
 
 func FindAgreementByID(id interface{}, ctx *DB.Context) (a *Agreement, err error) {
+	a = new(Agreement)
+	var fields agmtPrivateFields
+
 	switch id.(type) {
 	case string:
-		err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id.(string))}).One(&a)
+		err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id.(string))}).One(&fields)
 	case bson.ObjectId:
-		err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
+		err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&fields)
 	}
 	if err != nil {
 		return nil, err
 	}
+
+	a.agmtPrivateFields = fields
+
 	return a, nil
 }
 
