@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"net/http"
 	"log"
+	"net/http"
 )
 
 func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
@@ -17,7 +17,6 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	agreement.UnmarshalJSON(buf.Bytes())
-	log.Print(agreement)
 	// json.Unmarshal(buf.Bytes(), &agreement)
 
 	err := agreement.SaveAgreementWithCtx(ctx)
@@ -38,17 +37,22 @@ func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 }
 
 func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	//unmarshal json into agreement struct so we have easy access to the ID field
-	//with ID we pull the agreement from the DB, update it with the json and then set it's date modified field
-	a := new(models.Agreement)
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
-	a.UnmarshalJSON(buf.Bytes())
 
-	agreement, _ := models.FindAgreementByID(a.GetID(), ctx)
+	reqData := make(map[string]interface{})
+	json.Unmarshal(buf.Bytes(), &reqData)
+
+	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
 
 	agreement.UnmarshalJSON(buf.Bytes())
+	
+	//get the client's info
+	if email, ok := reqData["clientEmail"]; ok {
+		clientData := getClientInfo(email.(string))
+		agreement.SetClientID(clientData["id"].(string))
+	}
 	err := agreement.SaveAgreementWithCtx(ctx)
 	log.Print(err)
 
@@ -64,4 +68,18 @@ func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	fmt.Fprint(w, "Deleted User")
 
+}
+
+func getClientInfo(email string) map[string]interface{} {
+	client := &http.Client{}
+	r, _ := http.NewRequest("GET", "http://localhost:3000/user/search?create=true&email="+email, nil)
+	resp, err := client.Do(r)
+	if err != nil {
+		fmt.Printf("Error : %s", err)
+	}
+	clientBuf := new(bytes.Buffer)
+	clientBuf.ReadFrom(resp.Body)
+	var clientData []map[string]interface{}
+	json.Unmarshal(clientBuf.Bytes(), &clientData)
+	return clientData[0]
 }

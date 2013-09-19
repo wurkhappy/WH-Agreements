@@ -48,6 +48,10 @@ func (a *Agreement) GetID() (id bson.ObjectId) {
 	return a.agmtPrivateFields.ID
 }
 
+func (a *Agreement) SetClientID(id string) {
+	a.agmtPrivateFields.ClientID = id
+}
+
 func (a *Agreement) GetJSON() ([]byte, error) {
 	return json.Marshal(map[string]interface{}{
 		"id":               a.agmtPrivateFields.ID,
