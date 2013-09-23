@@ -12,17 +12,19 @@ import (
 )
 
 func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	log.Print("create agreement")
 	agreement := models.NewAgreement()
+	log.Print(agreement)
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
-	agreement.UnmarshalJSON(buf.Bytes())
-	// json.Unmarshal(buf.Bytes(), &agreement)
+	reqBytes := buf.Bytes()
+	json.Unmarshal(reqBytes, &agreement)
 
 	err := agreement.SaveAgreementWithCtx(ctx)
 	log.Print(err)
 
-	a, _ := agreement.GetJSON()
+	a, _ := json.Marshal(agreement)
 	w.Write(a)
 }
 
@@ -36,28 +38,49 @@ func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
 }
 
+func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	var displayData []byte
+	req.ParseForm()
+
+	if userIDs, ok := req.Form["userID"]; ok {
+		userID := userIDs[0]
+		log.Print(userID)
+		usersAgrmnts, _ := models.FindAgreementByClientID(userID, ctx)
+		log.Print(usersAgrmnts)
+		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID, ctx)
+		log.Print(freelancerAgrmnts)
+		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
+		log.Print(usersAgrmnts)
+		displayData, _ = json.Marshal(usersAgrmnts)
+
+	}
+
+	w.Write(displayData)
+
+}
+
 func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
+	// buf := new(bytes.Buffer)
+	// buf.ReadFrom(req.Body)
 
-	reqData := make(map[string]interface{})
-	json.Unmarshal(buf.Bytes(), &reqData)
+	// reqData := make(map[string]interface{})
+	// json.Unmarshal(buf.Bytes(), &reqData)
 
-	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
+	// agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
 
-	agreement.UnmarshalJSON(buf.Bytes())
-	
-	//get the client's info
-	if email, ok := reqData["clientEmail"]; ok {
-		clientData := getClientInfo(email.(string))
-		agreement.SetClientID(clientData["id"].(string))
-	}
-	err := agreement.SaveAgreementWithCtx(ctx)
-	log.Print(err)
+	// agreement.UnmarshalJSON(buf.Bytes())
 
-	jsonString, _ := agreement.GetJSON()
-	w.Write(jsonString)
+	// //get the client's info
+	// if email, ok := reqData["clientEmail"]; ok {
+	// 	clientData := getUserInfo(email.(string))
+	// 	agreement.SetClientID(clientData["id"].(string))
+	// }
+	// err := agreement.SaveAgreementWithCtx(ctx)
+	// log.Print(err)
+
+	// jsonString, _ := agreement.GetJSON()
+	// w.Write(jsonString)
 
 }
 
@@ -70,7 +93,7 @@ func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 }
 
-func getClientInfo(email string) map[string]interface{} {
+func getUserInfo(email string) map[string]interface{} {
 	client := &http.Client{}
 	r, _ := http.NewRequest("GET", "http://localhost:3000/user/search?create=true&email="+email, nil)
 	resp, err := client.Do(r)
