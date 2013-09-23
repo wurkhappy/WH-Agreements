@@ -35,14 +35,14 @@ type Agreement struct {
 
 func NewAgreement() *Agreement {
 	return &Agreement{
-		DateCreated:  time.Now(),
-		LastModified: time.Now(),
+		DateCreated:  time.Now().UTC(),
+		LastModified: time.Now().UTC(),
 		ID:           bson.NewObjectId(),
 	}
 }
 
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
-	a.LastModified = time.Now()
+	a.LastModified = time.Now().UTC()
 	coll := ctx.Database.C("agreements")
 	if _, err := coll.UpsertId(a.ID, &a); err != nil {
 		return err
@@ -83,7 +83,7 @@ func FindAgreementByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, 
 }
 
 func FindAgreementByFreelancerID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"freelancerid": id}).All(&agrmnts)
+	err = ctx.Database.C("agreements").Find(bson.M{"freelancerid": id}).Sort("-datecreated").All(&agrmnts)
 	log.Print(err)
 	if err != nil {
 		return nil, err
