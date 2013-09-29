@@ -21,6 +21,11 @@ func main() {
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
+	r.Handle("/agreement/{agreementID}/payment/{paymentID}/status", dbContextMixIn(handlers.CreatePaymentStatus)).Methods("POST")
+	r.Handle("/agreement/{agreementID}/payment/{paymentID}/status", dbContextMixIn(handlers.UpdatePaymentStatus)).Methods("PUT")
+	r.Handle("/agreement/{agreementID}/status", dbContextMixIn(handlers.CreateAgreementStatus)).Methods("POST")
+	r.Handle("/agreement/{agreementID}/status", dbContextMixIn(handlers.UpdateAgreementStatus)).Methods("PUT")
+
 	r.Handle("/agreements", dbContextMixIn(handlers.CreateAgreement)).Methods("POST")
 	r.Handle("/agreements", dbContextMixIn(handlers.FindAgreements)).Methods("GET")
 	r.Handle("/agreements/{id}", dbContextMixIn(handlers.UpdateAgreement)).Methods("PUT")

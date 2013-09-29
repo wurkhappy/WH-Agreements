@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"labix.org/v2/mgo/bson"
-	"log"
 	"time"
 )
 
@@ -28,21 +27,29 @@ type Agreement struct {
 	ProposedServices string        `json:"proposedServices"`
 	RefundPolicy     string        `json:"refundPolicy"`
 	Payments         []*Payment    `json:"payments"`
-	DateCreated      time.Time
-	LastModified     time.Time
-	Status           *status `json:"status"`
+	StatusHistory    statusHistory `json:"statusHistory"`
+	LastModified     time.Time     `json:"-"`
 }
 
 func NewAgreement() *Agreement {
+	id := bson.NewObjectId()
 	return &Agreement{
-		DateCreated:  time.Now().UTC(),
-		LastModified: time.Now().UTC(),
-		ID:           bson.NewObjectId(),
+		StatusHistory: statusHistory{
+			StatusAccepted(id.Hex(), ""),
+		},
+		ID: id,
 	}
 }
 
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
-	a.LastModified = time.Now().UTC()
+	a.LastModified = time.Now()
+
+	for _, payment := range a.Payments {
+		if !payment.ID.Valid() {
+			payment.ID = bson.NewObjectId()
+		}
+	}
+
 	coll := ctx.Database.C("agreements")
 	if _, err := coll.UpsertId(a.ID, &a); err != nil {
 		return err
@@ -73,8 +80,7 @@ func FindAgreementByID(id interface{}, ctx *DB.Context) (a *Agreement, err error
 }
 
 func FindAgreementByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"clientid": id}).All(&agrmnts)
-	log.Print(err)
+	err = ctx.Database.C("agreements").Find(bson.M{"clientid": id}).Sort("-lastmodified").All(&agrmnts)
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +89,7 @@ func FindAgreementByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, 
 }
 
 func FindAgreementByFreelancerID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"freelancerid": id}).Sort("-datecreated").All(&agrmnts)
-	log.Print(err)
+	err = ctx.Database.C("agreements").Find(bson.M{"freelancerid": id}).Sort("-lastmodified").All(&agrmnts)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +100,6 @@ func FindAgreementByFreelancerID(id string, ctx *DB.Context) (agrmnts []*Agreeme
 func DeleteAgreementWithID(id string, ctx *DB.Context) (err error) {
 	err = ctx.Database.C("agreements").RemoveId(bson.ObjectIdHex(id))
 	if err != nil {
-		log.Print(err)
 		return err
 	}
 	return nil

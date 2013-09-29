@@ -12,17 +12,16 @@ import (
 )
 
 func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	log.Print("create agreement")
 	agreement := models.NewAgreement()
-	log.Print(agreement)
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
+	log.Print(agreement.StatusHistory);
 	json.Unmarshal(reqBytes, &agreement)
+	log.Print(agreement.StatusHistory);
 
-	err := agreement.SaveAgreementWithCtx(ctx)
-	log.Print(err)
+	_ = agreement.SaveAgreementWithCtx(ctx)
 
 	a, _ := json.Marshal(agreement)
 	w.Write(a)
@@ -44,15 +43,12 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
 	if userIDs, ok := req.Form["userID"]; ok {
 		userID := userIDs[0]
-		log.Print(userID)
-		usersAgrmnts, _ := models.FindAgreementByClientID(userID, ctx)
-		log.Print(usersAgrmnts)
-		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID, ctx)
-		log.Print(freelancerAgrmnts)
-		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
-		log.Print(usersAgrmnts)
-		displayData, _ = json.Marshal(usersAgrmnts)
 
+		usersAgrmnts, _ := models.FindAgreementByClientID(userID, ctx)
+		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID, ctx)
+		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
+
+		displayData, _ = json.Marshal(usersAgrmnts)
 	}
 
 	w.Write(displayData)
@@ -61,26 +57,27 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
 func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 
-	// buf := new(bytes.Buffer)
-	// buf.ReadFrom(req.Body)
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(req.Body)
 
-	// reqData := make(map[string]interface{})
-	// json.Unmarshal(buf.Bytes(), &reqData)
+	reqData := make(map[string]interface{})
+	json.Unmarshal(buf.Bytes(), &reqData)
+	log.Print(reqData)
 
-	// agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
+	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
+	json.Unmarshal(buf.Bytes(), &agreement)
+	log.Print(agreement.Payments[0])
 
-	// agreement.UnmarshalJSON(buf.Bytes())
+	//get the client's info
+	if email, ok := reqData["clientEmail"]; ok {
+		clientData := getUserInfo(email.(string))
+		agreement.SetClientID(clientData["id"].(string))
+	}
+	err := agreement.SaveAgreementWithCtx(ctx)
+	log.Print(err)
 
-	// //get the client's info
-	// if email, ok := reqData["clientEmail"]; ok {
-	// 	clientData := getUserInfo(email.(string))
-	// 	agreement.SetClientID(clientData["id"].(string))
-	// }
-	// err := agreement.SaveAgreementWithCtx(ctx)
-	// log.Print(err)
-
-	// jsonString, _ := agreement.GetJSON()
-	// w.Write(jsonString)
+	jsonString, _ := json.Marshal(agreement)
+	w.Write(jsonString)
 
 }
 
