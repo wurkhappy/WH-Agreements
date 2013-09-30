@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"labix.org/v2/mgo/bson"
 	"time"
@@ -20,7 +21,7 @@ import (
 // }
 
 type Agreement struct {
-	ID               bson.ObjectId `json:"id" bson:"_id"`
+	ID               string        `json:"id" bson:"_id"`
 	ClientID         string        `json:"clientID"`
 	FreelancerID     string        `json:"freelancerID"`
 	Title            string        `json:"title"`
@@ -32,12 +33,12 @@ type Agreement struct {
 }
 
 func NewAgreement() *Agreement {
-	id := bson.NewObjectId()
+	id, _ := uuid.NewV4()
 	return &Agreement{
 		StatusHistory: statusHistory{
-			StatusAccepted(id.Hex(), ""),
+			StatusCreated(id.String(), ""),
 		},
-		ID: id,
+		ID: id.String(),
 	}
 }
 
@@ -45,8 +46,9 @@ func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	a.LastModified = time.Now()
 
 	for _, payment := range a.Payments {
-		if !payment.ID.Valid() {
-			payment.ID = bson.NewObjectId()
+		if payment.ID == "" {
+			id, _ := uuid.NewV4()
+			payment.ID = id.String()
 		}
 	}
 
@@ -57,7 +59,7 @@ func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	return nil
 }
 
-func (a *Agreement) GetID() (id bson.ObjectId) {
+func (a *Agreement) GetID() (id string) {
 	return a.ID
 }
 
@@ -65,13 +67,8 @@ func (a *Agreement) SetClientID(id string) {
 	a.ClientID = id
 }
 
-func FindAgreementByID(id interface{}, ctx *DB.Context) (a *Agreement, err error) {
-	switch id.(type) {
-	case string:
-		err = ctx.Database.C("agreements").Find(bson.M{"_id": bson.ObjectIdHex(id.(string))}).One(&a)
-	case bson.ObjectId:
-		err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
-	}
+func FindAgreementByID(id string, ctx *DB.Context) (a *Agreement, err error) {
+	err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +95,7 @@ func FindAgreementByFreelancerID(id string, ctx *DB.Context) (agrmnts []*Agreeme
 }
 
 func DeleteAgreementWithID(id string, ctx *DB.Context) (err error) {
-	err = ctx.Database.C("agreements").RemoveId(bson.ObjectIdHex(id))
+	err = ctx.Database.C("agreements").RemoveId(id)
 	if err != nil {
 		return err
 	}
