@@ -17,9 +17,7 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
-	log.Print(agreement.StatusHistory);
 	json.Unmarshal(reqBytes, &agreement)
-	log.Print(agreement.StatusHistory);
 
 	err := agreement.SaveAgreementWithCtx(ctx)
 	log.Print(err)

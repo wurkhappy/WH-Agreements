@@ -52,7 +52,7 @@ func (s *Status) UpdateAgreementStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 
 	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"statushistory.$": &s}},
+		Update:    bson.M{"$set": bson.M{"statushistory.$": &s, "lastmodified": time.Now()}},
 		ReturnNew: true,
 	}
 	coll := ctx.Database.C("agreements")
@@ -70,7 +70,7 @@ func (s *Status) UpdateAgreementStatus(ctx *DB.Context) (err error) {
 func (s *Status) UpdatePaymentStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"statushistory.$": &s}},
+		Update:    bson.M{"$set": bson.M{"statushistory.$": &s, "lastmodified": time.Now()}},
 		ReturnNew: true,
 	}
 
@@ -86,7 +86,7 @@ func (s *Status) UpdatePaymentStatus(ctx *DB.Context) (err error) {
 func (s *Status) AddAgreementStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 	change := mgo.Change{
-		Update:    bson.M{"$push": bson.M{"statushistory": &s}},
+		Update:    bson.M{"$push": bson.M{"statushistory": &s}, "$set":bson.M{"lastmodified": time.Now()}},
 		ReturnNew: true,
 	}
 	coll := ctx.Database.C("agreements")
@@ -101,7 +101,7 @@ func (s *Status) AddPaymentStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 
 	change := mgo.Change{
-		Update:    bson.M{"$push": bson.M{"statushistory": &s}, "$set": bson.M{"payments.$.currentstatus": &s}},
+		Update:    bson.M{"$push": bson.M{"statushistory": &s}, "$set": bson.M{"payments.$.currentstatus": &s, "lastmodified": time.Now()}},
 		ReturnNew: true,
 	}
 	coll := ctx.Database.C("agreements")
