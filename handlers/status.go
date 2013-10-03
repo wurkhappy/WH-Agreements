@@ -14,6 +14,9 @@ import (
 func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	req.ParseForm()
 	status := createStatus(req)
+	if status.Action == "submitted" {
+		models.ArchiveLastAgrmntVersion(status.AgreementID, ctx)
+	}
 
 	status.AddAgreementStatus(ctx)
 	s, _ := json.Marshal(status)

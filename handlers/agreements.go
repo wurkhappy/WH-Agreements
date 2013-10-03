@@ -17,7 +17,9 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
+	log.Print(string(reqBytes))
 	json.Unmarshal(reqBytes, &agreement)
+	agreement.AppendStatus(models.StatusCreated)
 
 	err := agreement.SaveAgreementWithCtx(ctx)
 	log.Print(err)
@@ -65,7 +67,6 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
 	json.Unmarshal(buf.Bytes(), &agreement)
-	log.Print(agreement.Payments[0])
 
 	//get the client's info
 	if email, ok := reqData["clientEmail"]; ok {

@@ -3,13 +3,15 @@ package models
 import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
+	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"log"
 	"time"
 )
 
 type Agreement struct {
 	ID               string        `json:"id" bson:"_id"`
-	AgreementID      string        `json:"agreementID"`
+	AgreementID      string        `json:"agreementID"` //tracks agreements across versions
 	Version          int           `json:"version"`
 	ClientID         string        `json:"clientID"`
 	FreelancerID     string        `json:"freelancerID"`
@@ -20,14 +22,17 @@ type Agreement struct {
 	StatusHistory    statusHistory `json:"statusHistory"`
 	LastModified     time.Time     `json:"lastModified"`
 	Archived         bool          `json:"archived"`
+	Draft            bool          `json:"draft"`
+	CurrentStatus    *Status       `json:"currentStatus" bson:",omitempty"`
 }
 
 func NewAgreement() *Agreement {
 	id, _ := uuid.NewV4()
 	return &Agreement{
-		AgreementID: id.String(),
-		Version:     1,
-		ID:          id.String(),
+		AgreementID:   id.String(),
+		StatusHistory: nil,
+		Version:       1,
+		ID:            id.String(),
 	}
 }
 
@@ -50,6 +55,11 @@ func (a *Agreement) addIDtoPayments() {
 			payment.ID = id.String()
 		}
 	}
+}
+
+func (a *Agreement) AppendStatus(f func(agrmntID string, paymentID string) *Status) {
+	status := f(a.AgreementID, "")
+	a.StatusHistory = append(a.StatusHistory, status)
 }
 
 func (a *Agreement) GetID() (id string) {
@@ -93,4 +103,32 @@ func DeleteAgreementWithID(id string, ctx *DB.Context) (err error) {
 		return err
 	}
 	return nil
+}
+
+func (a *Agreement) Archive(ctx *DB.Context) {
+	m := make(map[string]interface{})
+
+	change := mgo.Change{
+		Update:    bson.M{"$set": bson.M{"archived": true}},
+		ReturnNew: true,
+	}
+	coll := ctx.Database.C("agreements")
+	_, _ = coll.Find(bson.M{
+		"_id": a.ID,
+	}).Apply(change, &m)
+
+}
+
+func ArchiveLastAgrmntVersion(id string, ctx *DB.Context) {
+	var a *Agreement
+	_ = ctx.Database.C("agreements").Find(bson.M{"_id": id, "archived": false}).One(&a)
+
+	var agreements []*Agreement
+	_ = ctx.Database.C("agreements").Find(bson.M{"agreementid": a.AgreementID, "archived": false}).Sort("-version").All(&agreements)
+	log.Print(agreements)
+	if len(agreements) > 1 {
+		agreement := agreements[1]
+		agreement.Archive(ctx)
+
+	}
 }

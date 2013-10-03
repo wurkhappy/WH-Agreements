@@ -54,3 +54,16 @@ func Test_addIDtoPayments(t *testing.T) {
 		t.Error("ID was not added to payment")
 	}
 }
+
+func Test_AppendStatus(t *testing.T) {
+	agreement :=  NewAgreement()
+	agreement.AppendStatus(StatusAccepted)
+
+	testStatus := StatusAccepted(agreement.ID, "")
+
+	status := agreement.StatusHistory[0]
+
+	if status.Action != testStatus.Action{
+		t.Error("Status was not appended succesfully")
+	}
+}
