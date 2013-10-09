@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"log"
 	"net/http"
 )
 
@@ -24,7 +23,6 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 }
 
 func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	log.Print("payment status")
 	status := createStatus(req)
 
 	status.AddPaymentStatus(ctx)

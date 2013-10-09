@@ -28,7 +28,6 @@ type Status struct {
 	PaymentID   string     `json:"paymentID" bson:",omitempty"`
 	Action      string     `json:"action"`
 	Date        time.Time  `json:"date"`
-	Comments    []*Comment `json:"comments"`
 }
 
 func StatusCreated(agrmntID string, paymentID string) *Status {

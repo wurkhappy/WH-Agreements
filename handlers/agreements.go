@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"log"
 	"net/http"
 )
 
@@ -17,12 +16,10 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
-	log.Print(string(reqBytes))
 	json.Unmarshal(reqBytes, &agreement)
 	agreement.AppendStatus(models.StatusCreated)
 
-	err := agreement.SaveAgreementWithCtx(ctx)
-	log.Print(err)
+	_ = agreement.SaveAgreementWithCtx(ctx)
 
 	a, _ := json.Marshal(agreement)
 	w.Write(a)
@@ -63,7 +60,6 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	reqData := make(map[string]interface{})
 	json.Unmarshal(buf.Bytes(), &reqData)
-	log.Print(reqData)
 
 	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
 	json.Unmarshal(buf.Bytes(), &agreement)
@@ -73,8 +69,7 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 		clientData := getUserInfo(email.(string))
 		agreement.SetClientID(clientData["id"].(string))
 	}
-	err := agreement.SaveAgreementWithCtx(ctx)
-	log.Print(err)
+	_ = agreement.SaveAgreementWithCtx(ctx)
 
 	jsonString, _ := json.Marshal(agreement)
 	w.Write(jsonString)
