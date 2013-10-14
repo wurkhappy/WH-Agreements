@@ -54,31 +54,3 @@ func createStatus(req *http.Request) *models.Status {
 
 	return status
 }
-
-func UpdateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	status := new(models.Status)
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	reqBytes := buf.Bytes()
-	json.Unmarshal(reqBytes, &status)
-
-	status.UpdateAgreementStatus(ctx)
-
-	s, _ := json.Marshal(status)
-	w.Write(s)
-}
-
-func UpdatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	status := new(models.Status)
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	reqBytes := buf.Bytes()
-	json.Unmarshal(reqBytes, &status)
-
-	status.UpdatePaymentStatus(ctx)
-
-	s, _ := json.Marshal(status)
-	w.Write(s)
-}
