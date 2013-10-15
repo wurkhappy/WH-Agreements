@@ -47,7 +47,7 @@ func StatusSubmitted(agrmntID string, paymentID string) *Status {
 	return &Status{ID: id.String(), Date: time.Now(), Action: "submitted", AgreementID: agrmntID, PaymentID: paymentID}
 }
 
-func (s *Status) UpdateAgreementStatus(ctx *DB.Context) (err error) {
+func (s *Status) updateAgreementStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 
 	change := mgo.Change{
@@ -66,7 +66,7 @@ func (s *Status) UpdateAgreementStatus(ctx *DB.Context) (err error) {
 	return err
 }
 
-func (s *Status) UpdatePaymentStatus(ctx *DB.Context) (err error) {
+func (s *Status) updatePaymentStatus(ctx *DB.Context) (err error) {
 	m := make(map[string]interface{})
 	change := mgo.Change{
 		Update:    bson.M{"$set": bson.M{"statushistory.$": &s, "lastmodified": time.Now()}},

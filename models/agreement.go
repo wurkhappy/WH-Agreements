@@ -11,7 +11,7 @@ import (
 
 type Agreement struct {
 	ID               string        `json:"id" bson:"_id"`
-	AgreementID      string        `json:"agreementID"` //tracks agreements across versions
+	VersionlessID    string        `json:"versionlessID"` //tracks agreements across versions
 	Version          int           `json:"version"`
 	ClientID         string        `json:"clientID"`
 	FreelancerID     string        `json:"freelancerID"`
@@ -29,7 +29,7 @@ type Agreement struct {
 func NewAgreement() *Agreement {
 	id, _ := uuid.NewV4()
 	return &Agreement{
-		AgreementID:   id.String(),
+		VersionlessID:   id.String(),
 		StatusHistory: nil,
 		Version:       1,
 		ID:            id.String(),
@@ -58,12 +58,8 @@ func (a *Agreement) addIDtoPayments() {
 }
 
 func (a *Agreement) AppendStatus(f func(agrmntID string, paymentID string) *Status) {
-	status := f(a.AgreementID, "")
+	status := f(a.ID, "")
 	a.StatusHistory = append(a.StatusHistory, status)
-}
-
-func (a *Agreement) GetID() (id string) {
-	return a.AgreementID
 }
 
 func (a *Agreement) SetClientID(id string) {
@@ -124,7 +120,7 @@ func ArchiveLastAgrmntVersion(id string, ctx *DB.Context) {
 	_ = ctx.Database.C("agreements").Find(bson.M{"_id": id, "archived": false}).One(&a)
 
 	var agreements []*Agreement
-	_ = ctx.Database.C("agreements").Find(bson.M{"agreementid": a.AgreementID, "archived": false}).Sort("-version").All(&agreements)
+	_ = ctx.Database.C("agreements").Find(bson.M{"versionlessid": a.VersionlessID, "archived": false}).Sort("-version").All(&agreements)
 	log.Print(agreements)
 	if len(agreements) > 1 {
 		agreement := agreements[1]

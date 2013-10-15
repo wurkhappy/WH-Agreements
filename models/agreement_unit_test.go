@@ -26,15 +26,6 @@ func Test_NewAgreement(t *testing.T) {
 	}
 }
 
-func Test_GetID(t *testing.T) {
-	agreement := NewAgreement()
-
-	id := agreement.GetID()
-	if id != agreement.AgreementID {
-		t.Error("GetID not returning agreement id")
-	}
-}
-
 func Test_SetClientID(t *testing.T) {
 	agreement := NewAgreement()
 	clientID := "1"

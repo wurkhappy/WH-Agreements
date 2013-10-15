@@ -2,7 +2,6 @@ package DB
 
 import (
 	"labix.org/v2/mgo"
-	"net/http"
 )
 
 type Context struct {
@@ -15,7 +14,7 @@ func (c *Context) Close() {
 	c.Database.Session.Close()
 }
 
-func NewContext(req *http.Request) (*Context, error) {
+func NewContext() (*Context, error) {
 	return &Context{
 		Database: Session.Clone().DB(Config["DBName"]),
 	}, nil

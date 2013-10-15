@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	// "github.com/streadway/amqp"
+	// "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/handlers"
 	"labix.org/v2/mgo"
 	"net/http"
-
 )
 
 func hello(w http.ResponseWriter, req *http.Request) {
@@ -20,6 +21,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	r := mux.NewRouter()
 	r.HandleFunc("/world", hello).Methods("GET")
 	r.Handle("/agreement/{agreementID}/payment/{paymentID}/status", dbContextMixIn(handlers.CreatePaymentStatus)).Methods("POST")
@@ -39,7 +41,7 @@ type dbContextMixIn func(http.ResponseWriter, *http.Request, *DB.Context)
 
 func (h dbContextMixIn) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//create the context
-	ctx, err := DB.NewContext(req)
+	ctx, err := DB.NewContext()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
