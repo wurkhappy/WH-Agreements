@@ -19,8 +19,16 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	reqData, _ := parseRequest(req)
 
 	status := createStatus(agreementID, "", reqData["action"].(string))
-	if status.Action == "submitted" {
+	switch status.Action {
+	case "submitted":
 		models.ArchiveLastAgrmntVersion(status.AgreementID, ctx)
+		go emailNewAgreement(status.AgreementID)
+	case "accepted":
+		var message string
+		if msg, ok := reqData["message"]; ok {
+			message = msg.(string)
+		}
+		go emailAcceptedAgreement(status.AgreementID, message)
 	}
 
 	status.AddAgreementStatus(ctx)
@@ -115,6 +123,6 @@ func sendPayment(status *models.Status, debitURI string, ctx *DB.Context) {
 	defer connection.Close()
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct","transactions", "/payment/"+status.PaymentID+"/transaction")
+	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct", "transactions", "/payment/"+status.PaymentID+"/transaction")
 	publisher.Publish(body, true)
 }
