@@ -17,18 +17,20 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	vars := mux.Vars(req)
 	agreementID := vars["agreementID"]
 	reqData, _ := parseRequest(req)
+	var message string
+	if msg, ok := reqData["message"]; ok {
+		message = msg.(string)
+	}
 
 	status := createStatus(agreementID, "", reqData["action"].(string))
 	switch status.Action {
 	case "submitted":
 		models.ArchiveLastAgrmntVersion(status.AgreementID, ctx)
-		go emailNewAgreement(status.AgreementID)
+		go emailSubmittedAgreement(status.AgreementID, message)
 	case "accepted":
-		var message string
-		if msg, ok := reqData["message"]; ok {
-			message = msg.(string)
-		}
 		go emailAcceptedAgreement(status.AgreementID, message)
+	case "rejected":
+		go emailRejectedAgreement(status.AgreementID, message)
 	}
 
 	status.AddAgreementStatus(ctx)
@@ -40,16 +42,23 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	vars := mux.Vars(req)
 	agreementID := vars["agreementID"]
 	paymentID := vars["paymentID"]
+	message := ""
 	reqData, _ := parseRequest(req)
 	log.Print(reqData)
 
 	status := createStatus(agreementID, paymentID, reqData["action"].(string))
-	if status.Action == "submitted" {
+	switch status.Action {
+	case "submitted":
 		context, _ := DB.NewContext()
 		go createNewTransaction(status, reqData["creditSourceURI"].(string), context)
-	} else if status.Action == "accepted" {
+		go emailSubmittedPayment(agreementID, paymentID, message)
+	case "accepted":
 		context, _ := DB.NewContext()
 		go sendPayment(status, reqData["debitSourceURI"].(string), context)
+		go emailSentPayment(agreementID, paymentID, message)
+		go emailAcceptedPayment(agreementID, paymentID, message)
+	case "rejected":
+		go emailRejectedPayment(agreementID, paymentID, message)
 	}
 
 	status.AddPaymentStatus(ctx)
