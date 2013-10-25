@@ -29,10 +29,11 @@ type Agreement struct {
 func NewAgreement() *Agreement {
 	id, _ := uuid.NewV4()
 	return &Agreement{
-		VersionlessID:   id.String(),
+		VersionlessID: id.String(),
 		StatusHistory: nil,
 		Version:       1,
 		ID:            id.String(),
+		Draft:         true,
 	}
 }
 

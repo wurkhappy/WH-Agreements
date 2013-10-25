@@ -30,17 +30,20 @@ func emailSubmittedAgreement(agreementID, message string) {
 	if agreement.Version > 1 {
 		emailChangedAgreement(agreement, message)
 	} else {
-		emailNewAgreement(agreement)
+		emailNewAgreement(agreement, message)
 	}
 }
 
-func emailNewAgreement(agreement *models.Agreement) {
+func emailNewAgreement(agreement *models.Agreement, message string) {
 
-	message := map[string]interface{}{
-		"Body": agreement,
+	payload := map[string]interface{}{
+		"Body": map[string]interface{}{
+			"agreement": agreement,
+			"message":   message,
+		},
 	}
 
-	body, _ := json.Marshal(message)
+	body, _ := json.Marshal(payload)
 	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/agreement/submitted")
 	publisher.Publish(body, true)
 }

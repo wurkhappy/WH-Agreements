@@ -9,7 +9,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"log"
+	// "log"
 	"net/http"
 )
 
@@ -42,9 +42,12 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	vars := mux.Vars(req)
 	agreementID := vars["agreementID"]
 	paymentID := vars["paymentID"]
-	message := ""
+
 	reqData, _ := parseRequest(req)
-	log.Print(reqData)
+	var message string
+	if msg, ok := reqData["message"]; ok {
+		message = msg.(string)
+	}
 
 	status := createStatus(agreementID, paymentID, reqData["action"].(string))
 	switch status.Action {
