@@ -37,13 +37,14 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	json.Unmarshal(reqData, &data)
 
 	status := createStatus(agreementID, "", data.Action)
+	if data.Message != "" && data.Message != " " {
+		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID}
+		commentBytes, _ := json.Marshal(comment)
 
-	comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID}
-	commentBytes, _ := json.Marshal(comment)
-
-	body := bytes.NewReader(commentBytes)
-	r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
-	go sendRequest(r)
+		body := bytes.NewReader(commentBytes)
+		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
+		go sendRequest(r)
+	}
 
 	switch status.Action {
 	case "submitted":
@@ -69,13 +70,14 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	json.Unmarshal(reqData, &data)
 	status := createStatus(agreementID, paymentID, data.Action)
 
-	comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID, MilestoneID: paymentID}
-	commentBytes, _ := json.Marshal(comment)
+	if data.Message != "" && data.Message != " " {
+		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID, MilestoneID: paymentID}
+		commentBytes, _ := json.Marshal(comment)
 
-	body := bytes.NewReader(commentBytes)
-	r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
-	go sendRequest(r)
-
+		body := bytes.NewReader(commentBytes)
+		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
+		go sendRequest(r)
+	}
 
 	switch status.Action {
 	case "submitted":
