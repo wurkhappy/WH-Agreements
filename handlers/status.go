@@ -76,6 +76,7 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
 	go sendRequest(r)
 
+
 	switch status.Action {
 	case "submitted":
 		context, _ := DB.NewContext()
