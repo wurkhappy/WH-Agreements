@@ -22,11 +22,12 @@ type StatusData struct {
 }
 
 type Comment struct {
-	UserID      string `json:"userID"`
-	AgreementID string `json:"agreementID"`
-	Text        string `json:"text"`
-	MilestoneID string `json:"milestoneID"`
-	StatusID    string `json:"statusID"`
+	UserID             string `json:"userID"`
+	AgreementID        string `json:"agreementID"`
+	AgreementVersionID string `json:"agreementVersionID"`
+	Text               string `json:"text"`
+	MilestoneID        string `json:"milestoneID"`
+	StatusID           string `json:"statusID"`
 }
 
 func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
@@ -39,7 +40,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	json.Unmarshal(reqData, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
 	if data.Message != "" && data.Message != " " {
-		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
@@ -78,7 +79,7 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
 
 	if data.Message != "" && data.Message != " " {
-		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
@@ -101,6 +102,7 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 	}
 
 	agreement.SetPaymentStatus(status)
+	agreement.CurrentStatus = status
 	agreement.SaveAgreementWithCtx(ctx)
 	status.Save(ctx)
 	s, _ := json.Marshal(status)
