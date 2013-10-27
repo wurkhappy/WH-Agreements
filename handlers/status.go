@@ -9,7 +9,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	// "log"
+	"log"
 	"net/http"
 )
 
@@ -31,18 +31,19 @@ type Comment struct {
 
 func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
-	agreementID := vars["agreementID"]
+	versionID := vars["versionID"]
+	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
+
 	reqData := parseRequest(req)
 	var data *StatusData
 	json.Unmarshal(reqData, &data)
-
-	status := createStatus(agreementID, "", data.Action)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
 	if data.Message != "" && data.Message != " " {
-		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID}
+		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
-		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
+		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreement.AgreementID+"/comments", body)
 		go sendRequest(r)
 	}
 
@@ -56,69 +57,62 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 		go emailRejectedAgreement(status.AgreementID, data.Message)
 	}
 
-	status.AddAgreementStatus(ctx)
+	agreement.CurrentStatus = status
+	log.Print(agreement)
+	agreement.SaveAgreementWithCtx(ctx)
+	status.Save(ctx)
 	s, _ := json.Marshal(status)
 	w.Write(s)
 }
 
 func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
-	agreementID := vars["agreementID"]
+	versionID := vars["versionID"]
+	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
+
 	paymentID := vars["paymentID"]
+
 	reqData := parseRequest(req)
 	var data *StatusData
 	json.Unmarshal(reqData, &data)
-	status := createStatus(agreementID, paymentID, data.Action)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
 
 	if data.Message != "" && data.Message != " " {
-		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreementID, MilestoneID: paymentID}
+		comment := &Comment{Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
-		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreementID+"/comments", body)
+		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreement.AgreementID+"/comments", body)
 		go sendRequest(r)
 	}
 
 	switch status.Action {
 	case "submitted":
 		context, _ := DB.NewContext()
-		go createNewTransaction(status, data.CreditSourceURI, context)
-		go emailSubmittedPayment(agreementID, paymentID, data.Message)
+		go createNewTransaction(versionID, paymentID, data.CreditSourceURI, context)
+		go emailSubmittedPayment(versionID, paymentID, data.Message)
 	case "accepted":
 		context, _ := DB.NewContext()
 		go sendPayment(status, data.DebitSourceURI, context)
-		go emailSentPayment(agreementID, paymentID, data.Message)
-		go emailAcceptedPayment(agreementID, paymentID, data.Message)
+		go emailSentPayment(versionID, paymentID, data.Message)
+		go emailAcceptedPayment(versionID, paymentID, data.Message)
 	case "rejected":
-		go emailRejectedPayment(agreementID, paymentID, data.Message)
+		go emailRejectedPayment(versionID, paymentID, data.Message)
 	}
 
-	status.AddPaymentStatus(ctx)
+	agreement.SetPaymentStatus(status)
+	agreement.SaveAgreementWithCtx(ctx)
+	status.Save(ctx)
 	s, _ := json.Marshal(status)
 	w.Write(s)
 }
 
-func createStatus(agreementID, paymentID, action string) *models.Status {
-	var status *models.Status
-	switch action {
-	case "created":
-		status = models.StatusCreated(agreementID, paymentID)
-	case "submitted":
-		status = models.StatusSubmitted(agreementID, paymentID)
-	case "accepted":
-		status = models.StatusAccepted(agreementID, paymentID)
-	case "rejected":
-		status = models.StatusRejected(agreementID, paymentID)
-	}
-	return status
-}
-
-func createNewTransaction(status *models.Status, creditURI string, ctx *DB.Context) {
-	agreement, _ := models.FindAgreementByID(status.AgreementID, ctx)
+func createNewTransaction(versionID, paymentID, creditURI string, ctx *DB.Context) {
+	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
 
 	var amount int
 	for _, payment := range agreement.Payments {
-		if payment.ID == status.PaymentID {
+		if payment.ID == paymentID {
 			amount = payment.Amount
 		}
 	}
@@ -127,8 +121,8 @@ func createNewTransaction(status *models.Status, creditURI string, ctx *DB.Conte
 		"creditSourceURI": creditURI,
 		"clientID":        agreement.ClientID,
 		"freelancerID":    agreement.FreelancerID,
-		"agreementID":     agreement.ID,
-		"paymentID":       status.PaymentID,
+		"agreementID":     agreement.AgreementID,
+		"paymentID":       paymentID,
 		"amount":          amount,
 	}
 	message := map[string]interface{}{

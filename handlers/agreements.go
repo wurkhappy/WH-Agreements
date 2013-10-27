@@ -17,7 +17,6 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
 	json.Unmarshal(reqBytes, &agreement)
-	agreement.AppendStatus(models.StatusCreated)
 
 	_ = agreement.SaveAgreementWithCtx(ctx)
 
@@ -28,7 +27,9 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	agreement, _ := models.FindAgreementByID(id, ctx)
+	var agreement *models.Agreement
+	agreement, _ = models.FindAgreementByVersionID(id, ctx)
+	agreement.StatusHistory = agreement.GetStatusHistory(ctx)
 
 	u, _ := json.Marshal(agreement)
 	w.Write(u)
@@ -54,20 +55,21 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 }
 
 func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-
+	vars := mux.Vars(req)
+	id := vars["id"]
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(req.Body)
 
-	reqData := make(map[string]interface{})
+	var reqData map[string]interface{}
 	json.Unmarshal(buf.Bytes(), &reqData)
 
-	agreement, _ := models.FindAgreementByID(reqData["id"].(string), ctx)
+	agreement, _ := models.FindAgreementByVersionID(id, ctx)
 	json.Unmarshal(buf.Bytes(), &agreement)
 
 	//get the client's info
 	if email, ok := reqData["clientEmail"]; ok {
 		clientData := getUserInfo(email.(string))
-		agreement.SetClientID(clientData["id"].(string))
+		agreement.ClientID = clientData["id"].(string)
 	}
 	_ = agreement.SaveAgreementWithCtx(ctx)
 
@@ -79,10 +81,8 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	models.DeleteAgreementWithID(id, ctx)
+	models.DeleteAgreementWithVersionID(id, ctx)
 
 	fmt.Fprint(w, "Deleted User")
 
 }
-
-

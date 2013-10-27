@@ -14,100 +14,42 @@ package models
 import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
-	"log"
+	// "labix.org/v2/mgo"
+	// "labix.org/v2/mgo/bson"
+	// "log"
 	"time"
 )
 
 type statusHistory []*Status
 
 type Status struct {
-	ID          string     `json:"id" bson:"_id"`
-	AgreementID string     `json:"agreementID"`
-	PaymentID   string     `json:"paymentID" bson:",omitempty"`
-	Action      string     `json:"action"`
-	Date        time.Time  `json:"date"`
+	ID                 string    `json:"id" bson:"_id"`
+	AgreementID        string    `json:"agreementID"`
+	AgreementVersionID string    `json:"agreementVersionID"`
+	AgreementVersion   int       `json:"agreementVersion"`
+	PaymentID          string    `json:"paymentID" bson:",omitempty"`
+	Action             string    `json:"action"`
+	Date               time.Time `json:"date"`
 }
 
-func StatusCreated(agrmntID string, paymentID string) *Status {
+func CreateStatus(agrmntID, versionID, paymentID, action string, versionNumber int) *Status {
 	id, _ := uuid.NewV4()
-	return &Status{ID: id.String(), Date: time.Now(), Action: "created", AgreementID: agrmntID, PaymentID: paymentID}
-}
-func StatusAccepted(agrmntID string, paymentID string) *Status {
-	id, _ := uuid.NewV4()
-	return &Status{ID: id.String(), Date: time.Now(), Action: "accepted", AgreementID: agrmntID, PaymentID: paymentID}
-}
-func StatusRejected(agrmntID string, paymentID string) *Status {
-	id, _ := uuid.NewV4()
-	return &Status{ID: id.String(), Date: time.Now(), Action: "rejected", AgreementID: agrmntID, PaymentID: paymentID}
-}
-func StatusSubmitted(agrmntID string, paymentID string) *Status {
-	id, _ := uuid.NewV4()
-	return &Status{ID: id.String(), Date: time.Now(), Action: "submitted", AgreementID: agrmntID, PaymentID: paymentID}
-}
-
-func (s *Status) updateAgreementStatus(ctx *DB.Context) (err error) {
-	m := make(map[string]interface{})
-
-	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"statushistory.$": &s, "lastmodified": time.Now()}},
-		ReturnNew: true,
+	return &Status{
+		ID:                 id.String(),
+		Date:               time.Now(),
+		Action:             action,
+		AgreementID:        agrmntID,
+		PaymentID:          paymentID,
+		AgreementVersionID: versionID,
+		AgreementVersion:   versionNumber,
 	}
-	coll := ctx.Database.C("agreements")
-	info, err := coll.Find(bson.M{
-		"_id":               s.AgreementID,
-		"statushistory._id": s.ID,
-	}).Apply(change, &m)
-
-	log.Print(info)
-	log.Print(err)
-
-	return err
 }
 
-func (s *Status) updatePaymentStatus(ctx *DB.Context) (err error) {
-	m := make(map[string]interface{})
-	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"statushistory.$": &s, "lastmodified": time.Now()}},
-		ReturnNew: true,
+func (s *Status) Save(ctx *DB.Context) (err error) {
+
+	coll := ctx.Database.C("status.history")
+	if _, err := coll.UpsertId(s.ID, &s); err != nil {
+		return err
 	}
-
-	coll := ctx.Database.C("agreements")
-	_, err = coll.Find(bson.M{
-		"_id":               s.AgreementID,
-		"statushistory._id": s.ID,
-	}).Apply(change, &m)
-
-	return err
-}
-
-func (s *Status) AddAgreementStatus(ctx *DB.Context) (err error) {
-	m := make(map[string]interface{})
-	change := mgo.Change{
-		Update:    bson.M{"$push": bson.M{"statushistory": &s}, "$set":bson.M{"lastmodified": time.Now(), "currentStatus": &s}},
-		ReturnNew: true,
-	}
-	coll := ctx.Database.C("agreements")
-	_, err = coll.Find(bson.M{
-		"_id": s.AgreementID,
-	}).Apply(change, &m)
-
-	return err
-}
-
-func (s *Status) AddPaymentStatus(ctx *DB.Context) (err error) {
-	m := make(map[string]interface{})
-
-	change := mgo.Change{
-		Update:    bson.M{"$push": bson.M{"statushistory": &s}, "$set": bson.M{"payments.$.currentstatus": &s, "lastmodified": time.Now()}},
-		ReturnNew: true,
-	}
-	coll := ctx.Database.C("agreements")
-	_, err = coll.Find(bson.M{
-		"_id":          s.AgreementID,
-		"payments._id": s.PaymentID,
-	}).Apply(change, &m)
-
-	return err
+	return nil
 }
