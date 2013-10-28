@@ -17,7 +17,7 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
 	json.Unmarshal(reqBytes, &agreement)
-	FindAgreementByID
+	
 	agreement.AddIDtoPayments()
 	_ = agreement.SaveAgreementWithCtx(ctx)
 

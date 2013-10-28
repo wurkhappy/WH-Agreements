@@ -9,7 +9,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"log"
+	// "log"
 	"net/http"
 )
 
