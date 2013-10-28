@@ -40,8 +40,6 @@ func NewAgreement() *Agreement {
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	a.LastModified = time.Now()
 
-	a.addIDtoPayments()
-
 	coll := ctx.Database.C("agreements")
 	if _, err := coll.UpsertId(a.VersionID, &a); err != nil {
 		return err
@@ -49,7 +47,7 @@ func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	return nil
 }
 
-func (a *Agreement) addIDtoPayments() {
+func (a *Agreement) AddIDtoPayments() {
 	for _, payment := range a.Payments {
 		if payment.ID == "" {
 			id, _ := uuid.NewV4()
@@ -58,13 +56,8 @@ func (a *Agreement) addIDtoPayments() {
 	}
 }
 
-func (a *Agreement) AppendStatus(f func(agrmntID string, paymentID string) *Status) {
-	status := f(a.AgreementID, "")
-	a.StatusHistory = append(a.StatusHistory, status)
-}
-
-func FindAgreementByID(id string, ctx *DB.Context) (a *Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"agreementid": id, "archived": false}).Sort("-version").One(&a)
+func FindLatestAgreementByID(id string, ctx *DB.Context) (a *Agreement, err error) {
+	err = ctx.Database.C("agreements").Find(bson.M{"agreementid": id}).Sort("-version").One(&a)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +66,7 @@ func FindAgreementByID(id string, ctx *DB.Context) (a *Agreement, err error) {
 }
 
 func FindAgreementByVersionID(id string, ctx *DB.Context) (a *Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"_id": id, "archived": false}).One(&a)
+	err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +74,7 @@ func FindAgreementByVersionID(id string, ctx *DB.Context) (a *Agreement, err err
 	return a, nil
 }
 
-func FindAgreementByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
+func FindLiveAgreementsByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
 	err = ctx.Database.C("agreements").Find(bson.M{"clientid": id, "archived": false, "draft": false}).Sort("-lastmodified").All(&agrmnts)
 	if err != nil {
 		return nil, err

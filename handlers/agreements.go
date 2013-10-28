@@ -17,7 +17,8 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
 	json.Unmarshal(reqBytes, &agreement)
-
+	FindAgreementByID
+	agreement.AddIDtoPayments()
 	_ = agreement.SaveAgreementWithCtx(ctx)
 
 	a, _ := json.Marshal(agreement)
@@ -43,7 +44,7 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	if userIDs, ok := req.Form["userID"]; ok {
 		userID := userIDs[0]
 
-		usersAgrmnts, _ := models.FindAgreementByClientID(userID, ctx)
+		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID, ctx)
 		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID, ctx)
 		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
 
@@ -71,6 +72,7 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 		clientData := getUserInfo(email.(string))
 		agreement.ClientID = clientData["id"].(string)
 	}
+	agreement.AddIDtoPayments()
 	_ = agreement.SaveAgreementWithCtx(ctx)
 
 	jsonString, _ := json.Marshal(agreement)

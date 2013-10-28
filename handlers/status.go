@@ -59,7 +59,6 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	}
 
 	agreement.CurrentStatus = status
-	log.Print(agreement)
 	agreement.SaveAgreementWithCtx(ctx)
 	status.Save(ctx)
 	s, _ := json.Marshal(status)
