@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	// "fmt"
 	"github.com/gorilla/mux"
-	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
