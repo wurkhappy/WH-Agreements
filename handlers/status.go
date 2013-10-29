@@ -44,7 +44,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
-		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreement.AgreementID+"/comments", body)
+		r, _ := http.NewRequest("POST", CommentsService+"/agreement/"+agreement.AgreementID+"/comments", body)
 		go sendRequest(r)
 	}
 
@@ -82,7 +82,7 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 		commentBytes, _ := json.Marshal(comment)
 
 		body := bytes.NewReader(commentBytes)
-		r, _ := http.NewRequest("POST", "http://localhost:5050/agreement/"+agreement.AgreementID+"/comments", body)
+		r, _ := http.NewRequest("POST", CommentsService+"/agreement/"+agreement.AgreementID+"/comments", body)
 		go sendRequest(r)
 	}
 
@@ -130,12 +130,6 @@ func createNewTransaction(versionID, paymentID, creditURI string, ctx *DB.Contex
 		"Method": "POST",
 		"Body":   m,
 	}
-	uri := "amqp://guest:guest@localhost:5672/"
-	connection, err := amqp.Dial(uri)
-	if err != nil {
-		panic(err)
-	}
-	defer connection.Close()
 
 	body, _ := json.Marshal(message)
 	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct", "transactions", "/transactions")
@@ -151,12 +145,6 @@ func sendPayment(status *models.Status, debitURI string, ctx *DB.Context) {
 		"Method": "PUT",
 		"Body":   m,
 	}
-	uri := "amqp://guest:guest@localhost:5672/"
-	connection, err := amqp.Dial(uri)
-	if err != nil {
-		panic(err)
-	}
-	defer connection.Close()
 
 	body, _ := json.Marshal(message)
 	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct", "transactions", "/payment/"+status.PaymentID+"/transaction")

@@ -12,12 +12,11 @@ import (
 	// "log"
 	// "net/http"
 )
-
+var rabbitmqURI = "amqp://guest:guest@localhost:5672/"
 var connection *amqp.Connection
 
 func init() {
-	uri := "amqp://guest:guest@localhost:5672/"
-	cn, err := amqp.Dial(uri)
+	cn, err := amqp.Dial(rabbitmqURI)
 	if err != nil {
 		panic(err)
 	}
