@@ -24,6 +24,7 @@ type Agreement struct {
 	Archived         bool          `json:"archived"`
 	Draft            bool          `json:"draft"`
 	CurrentStatus    *Status       `json:"currentStatus" bson:",omitempty"`
+	Clauses          []*Clause     `json:"clauses" bson:",omitempty"`
 }
 
 func NewAgreement() *Agreement {

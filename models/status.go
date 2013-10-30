@@ -1,14 +1,3 @@
-//IMPORTANT INFO:
-//Right now this file contains a workaround for statuses and comments.
-//MongoDB cannot dynamically query arrays right now more than one level deep.
-//This is a problem because when we update comments for payments, we need to update payments.$.statusHistory.$.comments
-//Instead payments no longer have a statusHistory, they just hold current status.
-//A payment needs to know it's status in order to manage what actions the user can take.
-//However, a payment doesn't need to know about it's comments.
-//So what I've done here is give an item it's status as well as pass that same status to the agreements status history.
-//With this design, a status is only ever one level deep.
-//This isn't a terrible design considering that a status on a payment is also a status on an agreement.
-
 package models
 
 import (
