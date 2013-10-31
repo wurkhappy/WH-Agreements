@@ -17,7 +17,7 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	buf.ReadFrom(req.Body)
 	reqBytes := buf.Bytes()
 	json.Unmarshal(reqBytes, &agreement)
-	
+
 	agreement.AddIDtoPayments()
 	_ = agreement.SaveAgreementWithCtx(ctx)
 
@@ -87,4 +87,16 @@ func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 
 	fmt.Fprint(w, "Deleted User")
 
+}
+
+func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+
+	agreement, _ := models.FindAgreementByVersionID(id, ctx)
+	agreement.Archived = true
+	agreement.SaveAgreementWithCtx(ctx)
+
+	jsonString, _ := json.Marshal(agreement)
+	w.Write(jsonString)
 }

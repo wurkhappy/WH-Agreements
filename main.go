@@ -32,6 +32,7 @@ func main() {
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.UpdateAgreement)).Methods("PUT")
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.DeleteAgreement)).Methods("DELETE")
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.GetAgreement)).Methods("GET")
+	r.Handle("/agreements/v/{id}/archive", dbContextMixIn(handlers.ArchiveAgreement)).Methods("POST")
 	http.Handle("/", r)
 
 	http.ListenAndServe(":4050", nil)
