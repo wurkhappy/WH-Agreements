@@ -147,5 +147,5 @@ func (a *Agreement) GetFirstOutstandingPayment() *Payment{
 			return payment
 		}
 	}
-	
+	return nil
 }
