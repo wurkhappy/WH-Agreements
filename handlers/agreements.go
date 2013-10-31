@@ -95,6 +95,10 @@ func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context)
 
 	agreement, _ := models.FindAgreementByVersionID(id, ctx)
 	agreement.Archived = true
+
+	if agreement.GetFirstOutstandingPayment() == nil {
+		go emailArchivedAgreement(agreement)
+	}
 	agreement.SaveAgreementWithCtx(ctx)
 
 	jsonString, _ := json.Marshal(agreement)

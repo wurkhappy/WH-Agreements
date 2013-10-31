@@ -184,3 +184,7 @@ func emailAcceptedPayment(agreementID, paymentID, message string) {
 	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/payment/accepted")
 	publisher.Publish(body, true)
 }
+
+func emailArchivedAgreement(a *models.Agreement) {
+	//TODO:Fill in functionality
+}

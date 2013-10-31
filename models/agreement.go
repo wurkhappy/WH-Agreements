@@ -140,3 +140,12 @@ func (a *Agreement) GetStatusHistory(ctx *DB.Context) []*Status {
 	_ = ctx.Database.C("status.history").Find(bson.M{"agreementid": a.AgreementID}).All(&statusHistory)
 	return statusHistory
 }
+
+func (a *Agreement) GetFirstOutstandingPayment() *Payment{
+	for _, payment :=  range a.Payments{
+		if payment.CurrentStatus.Action != "accepted" {
+			return payment
+		}
+	}
+	
+}
