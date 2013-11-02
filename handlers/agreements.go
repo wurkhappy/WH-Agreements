@@ -104,3 +104,35 @@ func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context)
 	jsonString, _ := json.Marshal(agreement)
 	w.Write(jsonString)
 }
+
+func GetAgreementOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+	a, _ := models.FindLatestAgreementByID(id, ctx)
+	data := struct {
+		ClientID   string `json:"clientID"`
+		Freelancer string `json:"freelancerID"`
+	}{
+		a.ClientID,
+		a.FreelancerID,
+	}
+
+	jsonData, _ := json.Marshal(data)
+	w.Write(jsonData)
+}
+
+func GetVersionOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+	vars := mux.Vars(req)
+	id := vars["id"]
+	a, _ := models.FindAgreementByVersionID(id, ctx)
+	data := struct {
+		ClientID   string `json:"clientID"`
+		Freelancer string `json:"freelancerID"`
+	}{
+		a.ClientID,
+		a.FreelancerID,
+	}
+
+	jsonData, _ := json.Marshal(data)
+	w.Write(jsonData)
+}

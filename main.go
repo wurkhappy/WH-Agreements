@@ -28,7 +28,9 @@ func main() {
 	r.Handle("/agreement/v/{versionID}/status", dbContextMixIn(handlers.CreateAgreementStatus)).Methods("POST")
 
 	r.Handle("/agreements/v", dbContextMixIn(handlers.CreateAgreement)).Methods("POST")
+	r.Handle("/agreements/{id}/owners", dbContextMixIn(handlers.GetAgreementOwner)).Methods("GET")
 	r.Handle("/agreements", dbContextMixIn(handlers.FindAgreements)).Methods("GET")
+	r.Handle("/agreements/v/{id}/owners", dbContextMixIn(handlers.GetVersionOwner)).Methods("GET")
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.UpdateAgreement)).Methods("PUT")
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.DeleteAgreement)).Methods("DELETE")
 	r.Handle("/agreements/v/{id}", dbContextMixIn(handlers.GetAgreement)).Methods("GET")
