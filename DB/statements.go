@@ -38,7 +38,7 @@ func CreateStatements() {
 		panic(err)
 	}
 
-	FindLiveAgreementsByClientID, err = DB.Prepare("SELECT data FROM wh_user WHERE data->>'clientID' = $1 AND data->>'archived' = 'false' AND data->>'draft' = 'false'")
+	FindLiveAgreementsByClientID, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'clientID' = $1 AND data->>'archived' = 'false' AND data->>'draft' = 'false'")
 	if err != nil {
 		panic(err)
 	}

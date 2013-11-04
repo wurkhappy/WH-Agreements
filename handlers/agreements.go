@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
+	// "log"
 	"net/http"
 )
 
@@ -40,10 +41,8 @@ func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	var displayData []byte
 	req.ParseForm()
-
 	if userIDs, ok := req.Form["userID"]; ok {
 		userID := userIDs[0]
-
 		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
 		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
 		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
