@@ -19,7 +19,7 @@ func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	json.Unmarshal(reqBytes, &agreement)
 
 	agreement.AddIDtoPayments()
-	_ = agreement.SaveAgreementWithCtx(ctx)
+	_ = agreement.Save()
 
 	a, _ := json.Marshal(agreement)
 	w.Write(a)
@@ -29,8 +29,8 @@ func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
 	var agreement *models.Agreement
-	agreement, _ = models.FindAgreementByVersionID(id, ctx)
-	agreement.StatusHistory = agreement.GetStatusHistory(ctx)
+	agreement, _ = models.FindAgreementByVersionID(id)
+	agreement.StatusHistory, _ = models.GetStatusHistory(agreement.AgreementID)
 
 	u, _ := json.Marshal(agreement)
 	w.Write(u)
@@ -44,8 +44,8 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	if userIDs, ok := req.Form["userID"]; ok {
 		userID := userIDs[0]
 
-		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID, ctx)
-		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID, ctx)
+		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
+		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
 		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
 
 		displayData, _ = json.Marshal(usersAgrmnts)
@@ -64,7 +64,7 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	var reqData map[string]interface{}
 	json.Unmarshal(buf.Bytes(), &reqData)
 
-	agreement, _ := models.FindAgreementByVersionID(id, ctx)
+	agreement, _ := models.FindAgreementByVersionID(id)
 	json.Unmarshal(buf.Bytes(), &agreement)
 
 	//get the client's info
@@ -73,7 +73,7 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 		agreement.ClientID = clientData["id"].(string)
 	}
 	agreement.AddIDtoPayments()
-	_ = agreement.SaveAgreementWithCtx(ctx)
+	_ = agreement.Save()
 
 	jsonString, _ := json.Marshal(agreement)
 	w.Write(jsonString)
@@ -83,7 +83,7 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	models.DeleteAgreementWithVersionID(id, ctx)
+	models.DeleteAgreementWithVersionID(id)
 
 	fmt.Fprint(w, "Deleted User")
 
@@ -93,13 +93,13 @@ func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context)
 	vars := mux.Vars(req)
 	id := vars["id"]
 
-	agreement, _ := models.FindAgreementByVersionID(id, ctx)
+	agreement, _ := models.FindAgreementByVersionID(id)
 	agreement.Archived = true
 
 	if agreement.GetFirstOutstandingPayment() == nil {
 		go emailArchivedAgreement(agreement)
 	}
-	agreement.SaveAgreementWithCtx(ctx)
+	agreement.Save()
 
 	jsonString, _ := json.Marshal(agreement)
 	w.Write(jsonString)
@@ -108,7 +108,7 @@ func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context)
 func GetAgreementOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	a, _ := models.FindLatestAgreementByID(id, ctx)
+	a, _ := models.FindLatestAgreementByID(id)
 	data := struct {
 		ClientID   string `json:"clientID"`
 		Freelancer string `json:"freelancerID"`
@@ -124,7 +124,7 @@ func GetAgreementOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context
 func GetVersionOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	id := vars["id"]
-	a, _ := models.FindAgreementByVersionID(id, ctx)
+	a, _ := models.FindAgreementByVersionID(id)
 	data := struct {
 		ClientID   string `json:"clientID"`
 		Freelancer string `json:"freelancerID"`

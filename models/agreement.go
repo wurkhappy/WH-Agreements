@@ -1,10 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"log"
 	"time"
 )
@@ -38,6 +37,18 @@ func NewAgreement() *Agreement {
 	}
 }
 
+func (a *Agreement) Save() (err error) {
+	a.LastModified = time.Now()
+
+	jsonByte, _ := json.Marshal(a)
+	_, err = DB.UpsertAgreement.Query(a.VersionID, string(jsonByte))
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	return nil
+}
+
 func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
 	a.LastModified = time.Now()
 
@@ -57,74 +68,108 @@ func (a *Agreement) AddIDtoPayments() {
 	}
 }
 
-func FindLatestAgreementByID(id string, ctx *DB.Context) (a *Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"agreementid": id}).Sort("-version").One(&a)
+func FindLatestAgreementByID(id string) (a *Agreement, err error) {
+	var s string
+	//query sorts by DESC and we get the first row so we get the latest
+	err = DB.FindLiveVersions.QueryRow(id).Scan(&s)
 	if err != nil {
 		return nil, err
 	}
-
+	json.Unmarshal([]byte(s), &a)
 	return a, nil
 }
 
-func FindAgreementByVersionID(id string, ctx *DB.Context) (a *Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"_id": id}).One(&a)
+func FindAgreementByVersionID(id string) (a *Agreement, err error) {
+	var s string
+	err = DB.FindAgreementByVersionID.QueryRow(id).Scan(&s)
 	if err != nil {
 		return nil, err
 	}
-
+	json.Unmarshal([]byte(s), &a)
 	return a, nil
 }
 
-func FindLiveAgreementsByClientID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"clientid": id, "archived": false, "draft": false}).Sort("-lastmodified").All(&agrmnts)
+func FindLiveAgreementsByClientID(id string) (agrmnts []*Agreement, err error) {
+	r, err := DB.FindLiveAgreementsByClientID.Query(id)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agrmnts = append(agrmnts, a)
+	}
 	return agrmnts, nil
 }
 
-func FindAgreementByFreelancerID(id string, ctx *DB.Context) (agrmnts []*Agreement, err error) {
-	err = ctx.Database.C("agreements").Find(bson.M{"freelancerid": id, "archived": false}).Sort("-lastmodified").All(&agrmnts)
+func FindAgreementByFreelancerID(id string) (agrmnts []*Agreement, err error) {
+	r, err := DB.FindAgreementByFreelancerID.Query(id)
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agrmnts = append(agrmnts, a)
+	}
 	return agrmnts, nil
 }
 
-func DeleteAgreementWithVersionID(id string, ctx *DB.Context) (err error) {
-	err = ctx.Database.C("agreements").RemoveId(id)
+func DeleteAgreementWithVersionID(id string) (err error) {
+	_, err = DB.DeleteAgreement.Exec(id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a *Agreement) Archive(ctx *DB.Context) {
-	m := make(map[string]interface{})
-
-	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"archived": true}},
-		ReturnNew: true,
-	}
-	coll := ctx.Database.C("agreements")
-	_, _ = coll.Find(bson.M{
-		"_id": a.VersionID,
-	}).Apply(change, &m)
-
+func (a *Agreement) Archive() {
+	a.Archived = true
+	a.Save()
 }
 
-func ArchiveLastAgrmntVersion(id string, ctx *DB.Context) {
+func ArchiveLastAgrmntVersion(id string) error {
 
 	var agreements []*Agreement
-	_ = ctx.Database.C("agreements").Find(bson.M{"agreementid": id, "archived": false}).Sort("-version").All(&agreements)
-	log.Print(agreements)
-	if len(agreements) > 1 {
-		agreement := agreements[1]
-		agreement.Archive(ctx)
-
+	r, err := DB.FindLiveVersions.Query(id)
+	if err != nil {
+		return err
 	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agreements = append(agreements, a)
+	}
+
+	count := len(agreements)
+	if count > 1 {
+		for i := 1; i < count; i++ {
+			agreement := agreements[i]
+			agreement.Archive()
+		}
+	}
+	return nil
 }
 
 func (a *Agreement) SetPaymentStatus(status *Status) {
@@ -135,14 +180,8 @@ func (a *Agreement) SetPaymentStatus(status *Status) {
 	}
 }
 
-func (a *Agreement) GetStatusHistory(ctx *DB.Context) []*Status {
-	var statusHistory []*Status
-	_ = ctx.Database.C("status.history").Find(bson.M{"agreementid": a.AgreementID}).All(&statusHistory)
-	return statusHistory
-}
-
-func (a *Agreement) GetFirstOutstandingPayment() *Payment{
-	for _, payment :=  range a.Payments{
+func (a *Agreement) GetFirstOutstandingPayment() *Payment {
+	for _, payment := range a.Payments {
 		if payment.CurrentStatus.Action != "accepted" {
 			return payment
 		}

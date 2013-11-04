@@ -32,7 +32,7 @@ type Comment struct {
 func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	versionID := vars["versionID"]
-	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(versionID)
 
 	reqData := parseRequest(req)
 	var data *StatusData
@@ -49,7 +49,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 
 	switch status.Action {
 	case "submitted":
-		models.ArchiveLastAgrmntVersion(status.AgreementID, ctx)
+		models.ArchiveLastAgrmntVersion(status.AgreementID)
 		go emailSubmittedAgreement(status.AgreementID, data.Message)
 	case "accepted":
 		go emailAcceptedAgreement(status.AgreementID, data.Message)
@@ -58,8 +58,8 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	}
 
 	agreement.CurrentStatus = status
-	agreement.SaveAgreementWithCtx(ctx)
-	status.Save(ctx)
+	agreement.Save()
+	status.Save()
 	s, _ := json.Marshal(status)
 	w.Write(s)
 }
@@ -67,7 +67,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 	vars := mux.Vars(req)
 	versionID := vars["versionID"]
-	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(versionID)
 
 	paymentID := vars["paymentID"]
 
@@ -101,14 +101,14 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 
 	agreement.SetPaymentStatus(status)
 	agreement.CurrentStatus = status
-	agreement.SaveAgreementWithCtx(ctx)
-	status.Save(ctx)
+	agreement.Save()
+	status.Save()
 	s, _ := json.Marshal(status)
 	w.Write(s)
 }
 
 func createNewTransaction(versionID, paymentID, creditURI string, ctx *DB.Context) {
-	agreement, _ := models.FindAgreementByVersionID(versionID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(versionID)
 
 	var amount int
 	for _, payment := range agreement.Payments {

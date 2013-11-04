@@ -4,8 +4,9 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	// "labix.org/v2/mgo"
+	"encoding/json"
 	// "labix.org/v2/mgo/bson"
-	// "log"
+	"log"
 	"time"
 )
 
@@ -34,11 +35,32 @@ func CreateStatus(agrmntID, versionID, paymentID, action string, versionNumber i
 	}
 }
 
-func (s *Status) Save(ctx *DB.Context) (err error) {
-
-	coll := ctx.Database.C("status.history")
-	if _, err := coll.UpsertId(s.ID, &s); err != nil {
+func (s *Status) Save() (err error) {
+	jsonByte, _ := json.Marshal(s)
+	_, err = DB.UpsertStatus.Query(s.ID, string(jsonByte))
+	if err != nil {
+		log.Print(err)
 		return err
 	}
 	return nil
+}
+
+func GetStatusHistory(agreementID string) (statuses []*Status, err error) {
+	r, err := DB.GetStatusHistory.Query(agreementID)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var st *Status
+		json.Unmarshal([]byte(s), &st)
+		statuses = append(statuses, st)
+	}
+	return statuses, nil
 }

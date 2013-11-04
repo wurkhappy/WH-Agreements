@@ -7,7 +7,6 @@ import (
 	// "github.com/gorilla/mux"
 	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
-	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
 	// "log"
 	// "net/http"
@@ -24,8 +23,7 @@ func init() {
 }
 
 func emailSubmittedAgreement(agreementID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 	if agreement.Version > 1 {
 		emailChangedAgreement(agreement, message)
 	} else {
@@ -48,8 +46,7 @@ func emailNewAgreement(agreement *models.Agreement, message string) {
 }
 
 func emailAcceptedAgreement(agreementID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -64,8 +61,7 @@ func emailAcceptedAgreement(agreementID, message string) {
 }
 
 func emailRejectedAgreement(agreementID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -94,8 +90,7 @@ func emailChangedAgreement(agreement *models.Agreement, message string) {
 }
 
 func emailSubmittedPayment(agreementID, paymentID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 	var payment *models.Payment
 	for _, pymnt := range agreement.Payments {
 		if pymnt.ID == paymentID {
@@ -117,8 +112,7 @@ func emailSubmittedPayment(agreementID, paymentID, message string) {
 }
 
 func emailSentPayment(agreementID, paymentID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 	var payment *models.Payment
 	for _, pymnt := range agreement.Payments {
 		if pymnt.ID == paymentID {
@@ -140,8 +134,7 @@ func emailSentPayment(agreementID, paymentID, message string) {
 }
 
 func emailRejectedPayment(agreementID, paymentID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 	var payment *models.Payment
 	for _, pymnt := range agreement.Payments {
 		if pymnt.ID == paymentID {
@@ -163,8 +156,7 @@ func emailRejectedPayment(agreementID, paymentID, message string) {
 }
 
 func emailAcceptedPayment(agreementID, paymentID, message string) {
-	ctx, _ := DB.NewContext()
-	agreement, _ := models.FindAgreementByVersionID(agreementID, ctx)
+	agreement, _ := models.FindAgreementByVersionID(agreementID)
 	var payment *models.Payment
 	for _, pymnt := range agreement.Payments {
 		if pymnt.ID == paymentID {
