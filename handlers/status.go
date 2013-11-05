@@ -49,6 +49,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 
 	switch status.Action {
 	case "submitted":
+		agreement.Draft = false
 		models.ArchiveLastAgrmntVersion(status.AgreementID)
 		go emailSubmittedAgreement(status.AgreementID, data.Message)
 	case "accepted":
