@@ -58,7 +58,7 @@ func CreateStatements() {
 		panic(err)
 	}
 
-	GetStatusHistory, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'agreementID' = $1")
+	GetStatusHistory, err = DB.Prepare("SELECT data FROM status WHERE data->>'agreementID' = $1")
 	if err != nil {
 		panic(err)
 	}

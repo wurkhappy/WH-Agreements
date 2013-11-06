@@ -8,7 +8,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	// "log"
+	"log"
 	"net/http"
 )
 
@@ -38,6 +38,7 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	var data *StatusData
 	json.Unmarshal(reqData, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
+	log.Print(status)
 	if data.Message != "" && data.Message != " " {
 		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
