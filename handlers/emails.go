@@ -5,22 +5,11 @@ import (
 	"encoding/json"
 	// "fmt"
 	// "github.com/gorilla/mux"
-	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/models"
 	// "log"
 	// "net/http"
 )
-var rabbitmqURI = "amqp://guest:guest@localhost:5672/"
-var connection *amqp.Connection
-
-func init() {
-	cn, err := amqp.Dial(rabbitmqURI)
-	if err != nil {
-		panic(err)
-	}
-	connection = cn
-}
 
 func emailSubmittedAgreement(agreementID, message string) {
 	agreement, _ := models.FindAgreementByVersionID(agreementID)

@@ -11,13 +11,6 @@ import (
 var ctx *DB.Context
 
 func init() {
-	var err error
-	DB.Session, err = mgo.Dial(DB.Config["DBURL"])
-	if err != nil {
-		panic(err)
-	}
-	ctx = new(DB.Context)
-	ctx.Database = DB.Session.Clone().DB("TestDB")
 
 	DB.Name = "testdb"
 	DB.Setup()

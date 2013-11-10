@@ -3,13 +3,10 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	// "fmt"
-	"github.com/gorilla/mux"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
-	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
-	"log"
 	"net/http"
+	"fmt"
 )
 
 type StatusData struct {
@@ -29,16 +26,16 @@ type Comment struct {
 	StatusID           string `json:"statusID"`
 }
 
-func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	versionID := vars["versionID"]
-	agreement, _ := models.FindAgreementByVersionID(versionID)
+func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	versionID := params["versionID"].(string)
+	agreement, err := models.FindAgreementByVersionID(versionID)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
 
-	reqData := parseRequest(req)
 	var data *StatusData
-	json.Unmarshal(reqData, &data)
+	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
-	log.Print(status)
 	if data.Message != "" && data.Message != " " {
 		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
@@ -51,7 +48,10 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	switch status.Action {
 	case "submitted":
 		agreement.Draft = false
-		models.ArchiveLastAgrmntVersion(status.AgreementID)
+		err = models.ArchiveLastAgrmntVersion(status.AgreementID)
+		if err != nil {
+			return nil, fmt.Errorf("%s %s", "Error archiving: ", err.Error()), http.StatusBadRequest
+		}
 		go emailSubmittedAgreement(status.AgreementID, data.Message)
 	case "accepted":
 		go emailAcceptedAgreement(status.AgreementID, data.Message)
@@ -60,22 +60,29 @@ func CreateAgreementStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Con
 	}
 
 	agreement.CurrentStatus = status
-	agreement.Save()
-	status.Save()
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
+	err = status.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 	s, _ := json.Marshal(status)
-	w.Write(s)
+	return s, nil, http.StatusOK
 }
 
-func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	versionID := vars["versionID"]
-	agreement, _ := models.FindAgreementByVersionID(versionID)
+func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	versionID := params["versionID"].(string)
+	agreement, err := models.FindAgreementByVersionID(versionID)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
 
-	paymentID := vars["paymentID"]
+	paymentID := params["paymentID"].(string)
 
-	reqData := parseRequest(req)
 	var data *StatusData
-	json.Unmarshal(reqData, &data)
+	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
 
 	if data.Message != "" && data.Message != " " {
@@ -89,12 +96,10 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 
 	switch status.Action {
 	case "submitted":
-		context, _ := DB.NewContext()
-		go createNewTransaction(versionID, paymentID, data.CreditSourceURI, context)
+		go createNewTransaction(versionID, paymentID, data.CreditSourceURI)
 		go emailSubmittedPayment(versionID, paymentID, data.Message)
 	case "accepted":
-		context, _ := DB.NewContext()
-		go sendPayment(status, data.DebitSourceURI, context)
+		go sendPayment(status, data.DebitSourceURI)
 		go emailSentPayment(versionID, paymentID, data.Message)
 		go emailAcceptedPayment(versionID, paymentID, data.Message)
 	case "rejected":
@@ -103,13 +108,20 @@ func CreatePaymentStatus(w http.ResponseWriter, req *http.Request, ctx *DB.Conte
 
 	agreement.SetPaymentStatus(status)
 	agreement.CurrentStatus = status
-	agreement.Save()
-	status.Save()
+
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
+	err = status.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 	s, _ := json.Marshal(status)
-	w.Write(s)
+	return s, nil, http.StatusOK
 }
 
-func createNewTransaction(versionID, paymentID, creditURI string, ctx *DB.Context) {
+func createNewTransaction(versionID, paymentID, creditURI string) {
 	agreement, _ := models.FindAgreementByVersionID(versionID)
 
 	var amount int
@@ -137,7 +149,7 @@ func createNewTransaction(versionID, paymentID, creditURI string, ctx *DB.Contex
 	publisher.Publish(body, true)
 }
 
-func sendPayment(status *models.Status, debitURI string, ctx *DB.Context) {
+func sendPayment(status *models.Status, debitURI string) {
 
 	m := map[string]interface{}{
 		"debitSourceURI": debitURI,

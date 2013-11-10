@@ -49,16 +49,6 @@ func (a *Agreement) Save() (err error) {
 	return nil
 }
 
-func (a *Agreement) SaveAgreementWithCtx(ctx *DB.Context) (err error) {
-	a.LastModified = time.Now()
-
-	coll := ctx.Database.C("agreements")
-	if _, err := coll.UpsertId(a.VersionID, &a); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (a *Agreement) AddIDtoPayments() {
 	for _, payment := range a.Payments {
 		if payment.ID == "" {

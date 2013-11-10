@@ -1,47 +1,49 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/models"
 	// "log"
 	"net/http"
 )
 
-func CreateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	agreement := models.NewAgreement()
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
-	reqBytes := buf.Bytes()
-	json.Unmarshal(reqBytes, &agreement)
+	err := json.Unmarshal(body, &agreement)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Wrong value types"), http.StatusBadRequest
+	}
 
 	agreement.AddIDtoPayments()
-	_ = agreement.Save()
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 
 	a, _ := json.Marshal(agreement)
-	w.Write(a)
+	return a, nil, http.StatusOK
+
 }
 
-func GetAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
+func GetAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
 	var agreement *models.Agreement
-	agreement, _ = models.FindAgreementByVersionID(id)
+	agreement, err := models.FindAgreementByVersionID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
+
 	agreement.StatusHistory, _ = models.GetStatusHistory(agreement.AgreementID)
 
-	u, _ := json.Marshal(agreement)
-	w.Write(u)
-
+	a, _ := json.Marshal(agreement)
+	return a, nil, http.StatusOK
 }
 
-func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
+func FindAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var displayData []byte
-	req.ParseForm()
-	if userIDs, ok := req.Form["userID"]; ok {
+	if userIDs, ok := params["userID"].([]string); ok {
 		userID := userIDs[0]
 		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
 		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
@@ -50,21 +52,20 @@ func FindAgreements(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
 		displayData, _ = json.Marshal(usersAgrmnts)
 	}
 
-	w.Write(displayData)
-
+	return displayData, nil, http.StatusOK
 }
 
-func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(req.Body)
+func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
 
 	var reqData map[string]interface{}
-	json.Unmarshal(buf.Bytes(), &reqData)
+	json.Unmarshal(body, &reqData)
 
-	agreement, _ := models.FindAgreementByVersionID(id)
-	json.Unmarshal(buf.Bytes(), &agreement)
+	agreement, err := models.FindAgreementByVersionID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
+	json.Unmarshal(body, &agreement)
 
 	//get the client's info
 	if email, ok := reqData["clientEmail"]; ok {
@@ -72,42 +73,54 @@ func UpdateAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 		agreement.ClientID = clientData["id"].(string)
 	}
 	agreement.AddIDtoPayments()
-	_ = agreement.Save()
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 
 	jsonString, _ := json.Marshal(agreement)
-	w.Write(jsonString)
+	return jsonString, nil, http.StatusOK
 
 }
 
-func DeleteAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	models.DeleteAgreementWithVersionID(id)
+func DeleteAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
+	err := models.DeleteAgreementWithVersionID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error deleting agreement"), http.StatusBadRequest
+	}
 
-	fmt.Fprint(w, "Deleted User")
-
+	return nil, nil, http.StatusOK
 }
 
-func ArchiveAgreement(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
+func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
 
-	agreement, _ := models.FindAgreementByVersionID(id)
+	agreement, err := models.FindAgreementByVersionID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
 	agreement.Archived = true
 
-	if agreement.GetFirstOutstandingPayment() == nil {
+	//if there are payments outstanding and the user is archiving then send an email to the other user
+	if agreement.GetFirstOutstandingPayment() != nil {
 		go emailArchivedAgreement(agreement)
 	}
-	agreement.Save()
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 
 	jsonString, _ := json.Marshal(agreement)
-	w.Write(jsonString)
+	return jsonString, nil, http.StatusOK
 }
 
-func GetAgreementOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	a, _ := models.FindLatestAgreementByID(id)
+func GetAgreementOwner(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
+	a, err := models.FindLatestAgreementByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
 	data := struct {
 		ClientID   string `json:"clientID"`
 		Freelancer string `json:"freelancerID"`
@@ -117,13 +130,15 @@ func GetAgreementOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context
 	}
 
 	jsonData, _ := json.Marshal(data)
-	w.Write(jsonData)
+	return jsonData, nil, http.StatusOK
 }
 
-func GetVersionOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) {
-	vars := mux.Vars(req)
-	id := vars["id"]
-	a, _ := models.FindAgreementByVersionID(id)
+func GetVersionOwner(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
+	a, err := models.FindAgreementByVersionID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
 	data := struct {
 		ClientID   string `json:"clientID"`
 		Freelancer string `json:"freelancerID"`
@@ -133,5 +148,5 @@ func GetVersionOwner(w http.ResponseWriter, req *http.Request, ctx *DB.Context) 
 	}
 
 	jsonData, _ := json.Marshal(data)
-	w.Write(jsonData)
+	return jsonData, nil, http.StatusOK
 }
