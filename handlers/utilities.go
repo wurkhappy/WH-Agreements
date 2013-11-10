@@ -32,7 +32,9 @@ func getUserInfo(email string) map[string]interface{} {
 	return clientData[0]
 }
 
-func sendRequest(r *http.Request) (response []byte, statusCode int) {
+func sendRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
+	bodyReader := bytes.NewReader(body)
+	r, _ := http.NewRequest(method, service+path, bodyReader)
 	client := &http.Client{}
 	resp, err := client.Do(r)
 	if err != nil {
