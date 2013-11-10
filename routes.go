@@ -12,8 +12,8 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/agreements/v/:id",
 			Dest: map[string]interface{}{
 				"PUT":    handlers.UpdateAgreement,
-				"GET":    handlers.DeleteAgreement,
-				"DELETE": handlers.GetAgreement,
+				"GET":    handlers.GetAgreement,
+				"DELETE": handlers.DeleteAgreement,
 			},
 		},
 		urlrouter.Route{
