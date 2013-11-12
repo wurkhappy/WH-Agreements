@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/wurkhappy/mdp"
 	"net/http"
 )
 
@@ -44,6 +45,11 @@ func sendRequest(method, service, path string, body []byte) (response []byte, st
 	respBuf.ReadFrom(resp.Body)
 
 	return respBuf.Bytes(), resp.StatusCode
+}
+
+type ServiceResp struct {
+	StatusCode float64 `json:"status_code"`
+	Body       []byte  `json:"body"`
 }
 
 func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {

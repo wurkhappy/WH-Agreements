@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/wurkhappy/WH-Agreements/handlers"
 	"github.com/wurkhappy/WH-Config"
-	"github.com/wurkhappy/WH-UserService/models"
 	"github.com/wurkhappy/mdp"
 	"net/url"
 )
