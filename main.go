@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"github.com/wurkhappy/WH-Agreements/handlers"
+	"encoding/json"
 	"github.com/wurkhappy/WH-Config"
-	"net/http"
-	"strconv"
+	"github.com/wurkhappy/WH-UserService/models"
+	"github.com/wurkhappy/mdp"
+	"net/url"
 )
 
 func main() {
@@ -13,15 +13,41 @@ func main() {
 	handlers.Setup()
 	router.Start()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//route to function based on the path and method
-		route, pathParams, _ := router.FindRoute(r.URL.String())
-		routeMap := route.Dest.(map[string]interface{})
-		handler := routeMap[r.Method].(func(map[string]interface{}, []byte) ([]byte, error, int))
+	gophers := 10
 
-		//parse the request
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(r.Body)
+	for i := 0; i < gophers; i++ {
+		worker := mdp.NewWorker("tcp://localhost:5555", config.AgreementsService, false)
+		defer worker.Close()
+		go route(worker)
+	}
+
+	select {}
+}
+
+type Resp struct {
+	Body       []byte `json:"body"`
+	StatusCode int    `json:"status_code"`
+}
+
+type ServiceReq struct {
+	Method string
+	Path   string
+	Body   []byte
+}
+
+func route(worker mdp.Worker) {
+	for reply := [][]byte{}; ; {
+		request := worker.Recv(reply)
+		if len(request) == 0 {
+			break
+		}
+		var req *ServiceReq
+		json.Unmarshal(request[0], &req)
+
+		//route to function based on the path and method
+		route, pathParams, _ := router.FindRoute(req.Path)
+		routeMap := route.Dest.(map[string]interface{})
+		handler := routeMap[req.Method].(func(map[string]interface{}, []byte) ([]byte, error, int))
 
 		//add url params to params var
 		params := make(map[string]interface{})
@@ -29,19 +55,22 @@ func main() {
 			params[key] = value
 		}
 		//add url query params
-		values := r.URL.Query()
+		uri, _ := url.Parse(req.Path)
+		values := uri.Query()
 		for key, value := range values {
 			params[key] = value
 		}
 
 		//run handler and do standard http stuff(write JSON, return err, set status code)
-		jsonData, err, statusCode := handler(params, buf.Bytes())
+		jsonData, err, statusCode := handler(params, req.Body)
 		if err != nil {
-			http.Error(w, `{"status_code":`+strconv.Itoa(statusCode)+`, "description":"`+err.Error()+`"}`, statusCode)
-			return
+			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
+			d, _ := json.Marshal(resp)
+			reply = [][]byte{d}
+			continue
 		}
-		w.WriteHeader(statusCode)
-		w.Write(jsonData)
-	})
-	http.ListenAndServe(":4050", nil)
+		resp := &Resp{jsonData, statusCode}
+		d, _ := json.Marshal(resp)
+		reply = [][]byte{d}
+	}
 }
