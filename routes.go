@@ -41,9 +41,9 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
-			PathExp: "/agreements",
+			PathExp: "/user/:id/agreements",
 			Dest: map[string]interface{}{
-				"GET": handlers.FindAgreements,
+				"GET": handlers.FindUserAgreements,
 			},
 		},
 		urlrouter.Route{

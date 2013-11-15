@@ -40,17 +40,15 @@ func GetAgreement(params map[string]interface{}, body []byte) ([]byte, error, in
 	return a, nil, http.StatusOK
 }
 
-func FindAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
-	var displayData []byte
-	if userIDs, ok := params["userID"].([]string); ok {
-		userID := userIDs[0]
-		usersAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
-		freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
-		usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
+func FindUserAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var usersAgrmnts []*models.Agreement
+	userID := params["id"].(string)
+	clientAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
+	freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
+	usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
+	usersAgrmnts = append(usersAgrmnts, clientAgrmnts...)
 
-		displayData, _ = json.Marshal(usersAgrmnts)
-	}
-
+	displayData, _ := json.Marshal(usersAgrmnts)
 	return displayData, nil, http.StatusOK
 }
 

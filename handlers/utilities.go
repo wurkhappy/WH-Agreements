@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
 	"net/http"
 )
@@ -20,16 +21,9 @@ func parseRequest(req *http.Request) []byte {
 }
 
 func getUserInfo(email string) map[string]interface{} {
-	client := &http.Client{}
-	r, _ := http.NewRequest("GET", UserService+"/user/search?create=true&email="+email, nil)
-	resp, err := client.Do(r)
-	if err != nil {
-		fmt.Printf("Error : %s", err)
-	}
-	clientBuf := new(bytes.Buffer)
-	clientBuf.ReadFrom(resp.Body)
+	resp, _ := sendServiceRequest("GET", config.UserService, "/user/search?create=true&email="+email, nil)
 	var clientData []map[string]interface{}
-	json.Unmarshal(clientBuf.Bytes(), &clientData)
+	json.Unmarshal(resp, &clientData)
 	return clientData[0]
 }
 
@@ -53,7 +47,7 @@ type ServiceResp struct {
 }
 
 func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
-	client := mdp.NewClient("tcp://localhost:5555", false)
+	client := mdp.NewClient(config.MDPBroker, false)
 	defer client.Close()
 	m := map[string]interface{}{
 		"Method": method,
