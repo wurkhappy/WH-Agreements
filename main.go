@@ -7,13 +7,14 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
 	"net/url"
+	// "log"
 )
 
 var production = flag.Bool("production", false, "Production settings")
 
 func main() {
 	flag.Parse()
-	if production {
+	if *production {
 		config.Prod()
 	} else {
 		config.Test()
@@ -53,7 +54,10 @@ func route(worker mdp.Worker) {
 		json.Unmarshal(request[0], &req)
 
 		//route to function based on the path and method
-		route, pathParams, _ := router.FindRoute(req.Path)
+		route, pathParams, err := router.FindRoute(req.Path)
+		if route == nil || err != nil {
+			return
+		}
 		routeMap := route.Dest.(map[string]interface{})
 		handler := routeMap[req.Method].(func(map[string]interface{}, []byte) ([]byte, error, int))
 
