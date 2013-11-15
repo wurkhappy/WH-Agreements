@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/wurkhappy/WH-Agreements/models"
 	"net/http"
-	"time"
 )
 
 func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
