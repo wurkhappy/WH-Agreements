@@ -31,7 +31,7 @@ func NewAgreement() *Agreement {
 	return &Agreement{
 		VersionID:     id.String(),
 		StatusHistory: nil,
-		Version:       1,
+		Version:       0,
 		AgreementID:   id.String(),
 		Draft:         true,
 	}
@@ -39,6 +39,7 @@ func NewAgreement() *Agreement {
 
 func (a *Agreement) Save() (err error) {
 	a.LastModified = time.Now()
+	a.StatusHistory = nil
 
 	jsonByte, _ := json.Marshal(a)
 	_, err = DB.UpsertAgreement.Query(a.VersionID, string(jsonByte))
@@ -129,13 +130,15 @@ func DeleteAgreementWithVersionID(id string) (err error) {
 
 func (a *Agreement) Archive() {
 	a.Archived = true
-	a.Save()
+	err := a.Save()
+	if err != nil {
+		log.Print(err)
+	}
 }
 
-func ArchiveLastAgrmntVersion(id string) error {
-
+func (agreement *Agreement) ArchiveOtherVersions() error {
 	var agreements []*Agreement
-	r, err := DB.FindLiveVersions.Query(id)
+	r, err := DB.FindLiveVersions.Query(agreement.AgreementID)
 	if err != nil {
 		return err
 	}
@@ -147,16 +150,14 @@ func ArchiveLastAgrmntVersion(id string) error {
 		if err != nil {
 			return err
 		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agreements = append(agreements, a)
+		var agr *Agreement
+		json.Unmarshal([]byte(s), &agr)
+		agreements = append(agreements, agr)
 	}
 
-	count := len(agreements)
-	if count > 1 {
-		for i := 1; i < count; i++ {
-			agreement := agreements[i]
-			agreement.Archive()
+	for _, ag := range agreements {
+		if ag.VersionID != agreement.VersionID {
+			ag.Archive()
 		}
 	}
 	return nil

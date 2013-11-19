@@ -46,7 +46,8 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	switch status.Action {
 	case "submitted":
 		agreement.Draft = false
-		err = models.ArchiveLastAgrmntVersion(status.AgreementID)
+		agreement.Version += 1
+		err = agreement.ArchiveOtherVersions()
 		if err != nil {
 			return nil, fmt.Errorf("%s %s", "Error archiving: ", err.Error()), http.StatusBadRequest
 		}

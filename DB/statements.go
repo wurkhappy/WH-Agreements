@@ -23,7 +23,7 @@ func CreateStatements() {
 		panic(err)
 	}
 
-	FindLiveVersions, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'agreementID' = $1 ORDER BY data->>'version' DESC")
+	FindLiveVersions, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'agreementID' = $1 AND data->>'archived' = 'false' ORDER BY data->>'version' DESC")
 	if err != nil {
 		panic(err)
 	}
