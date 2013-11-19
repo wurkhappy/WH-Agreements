@@ -10,7 +10,7 @@ import (
 
 type Agreement struct {
 	AgreementID      string        `json:"agreementID"`
-	VersionID        string        `json:"versionID" bson:"_id"` //tracks agreements across versions
+	VersionID        string        `json:"versionID"` //tracks agreements across versions
 	Version          int           `json:"version"`
 	ClientID         string        `json:"clientID"`
 	FreelancerID     string        `json:"freelancerID"`
@@ -18,12 +18,11 @@ type Agreement struct {
 	ProposedServices string        `json:"proposedServices"`
 	RefundPolicy     string        `json:"refundPolicy"`
 	Payments         []*Payment    `json:"payments"`
-	StatusHistory    statusHistory `json:"statusHistory" bson:"-"`
+	StatusHistory    statusHistory `json:"statusHistory"`
 	LastModified     time.Time     `json:"lastModified"`
 	Archived         bool          `json:"archived"`
 	Draft            bool          `json:"draft"`
-	CurrentStatus    *Status       `json:"currentStatus" bson:",omitempty"`
-	Clauses          []*Clause     `json:"clauses" bson:",omitempty"`
+	CurrentStatus    *Status       `json:"currentStatus"`
 }
 
 func NewAgreement() *Agreement {
