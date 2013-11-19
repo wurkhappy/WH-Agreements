@@ -7,6 +7,7 @@ import (
 	// "github.com/gorilla/mux"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/models"
+	"github.com/wurkhappy/WH-Config"
 	// "log"
 	// "net/http"
 )
@@ -30,7 +31,7 @@ func emailNewAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/agreement/submitted")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/submitted")
 	publisher.Publish(body, true)
 }
 
@@ -45,7 +46,7 @@ func emailAcceptedAgreement(agreementID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/agreement/accepted")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/accepted")
 	publisher.Publish(body, true)
 }
 
@@ -60,7 +61,7 @@ func emailRejectedAgreement(agreementID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/agreement/rejected")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/rejected")
 	publisher.Publish(body, true)
 }
 
@@ -74,7 +75,7 @@ func emailChangedAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/agreement/updated")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/updated")
 	publisher.Publish(body, true)
 }
 
@@ -96,7 +97,7 @@ func emailSubmittedPayment(agreementID, paymentID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/payment/submitted")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/submitted")
 	publisher.Publish(body, true)
 }
 
@@ -118,7 +119,7 @@ func emailSentPayment(agreementID, paymentID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/payment/sent")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/sent")
 	publisher.Publish(body, true)
 }
 
@@ -140,7 +141,7 @@ func emailRejectedPayment(agreementID, paymentID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/payment/rejected")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/rejected")
 	publisher.Publish(body, true)
 }
 
@@ -162,7 +163,7 @@ func emailAcceptedPayment(agreementID, paymentID, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, _ := rbtmq.NewPublisher(connection, "email", "direct", "email", "/payment/accepted")
+	publisher, _ := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/accepted")
 	publisher.Publish(body, true)
 }
 
