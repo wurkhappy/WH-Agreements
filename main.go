@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/wurkhappy/WH-Agreements/handlers"
+	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
 	"net/url"
@@ -19,6 +20,7 @@ func main() {
 	} else {
 		config.Test()
 	}
+	DB.Setup(*production)
 	handlers.Setup()
 	router.Start()
 
