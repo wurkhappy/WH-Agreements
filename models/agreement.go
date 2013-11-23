@@ -178,3 +178,12 @@ func (a *Agreement) GetFirstOutstandingPayment() *Payment {
 	}
 	return nil
 }
+
+func (a *Agreement) GetPayment(id string) *Payment {
+	for _, payment := range a.Payments {
+		if payment.ID == id {
+			return payment
+		}
+	}
+	return nil
+}

@@ -36,11 +36,9 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	var data *StatusData
 	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
-	if data.Message != "" && data.Message != " " {
-		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
-		commentBytes, _ := json.Marshal(comment)
 
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
+	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action {
+		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
 	}
 
 	switch status.Action {
@@ -56,6 +54,13 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 		go emailAcceptedAgreement(status.AgreementID, data.Message)
 	case "rejected":
 		go emailRejectedAgreement(status.AgreementID, data.Message)
+	}
+
+	if data.Message != "" && data.Message != " " {
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
+		commentBytes, _ := json.Marshal(comment)
+
+		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
 	}
 
 	agreement.CurrentStatus = status
@@ -79,20 +84,21 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	}
 
 	paymentID := params["paymentID"].(string)
+	payment := agreement.GetPayment(paymentID)
 
 	var data *StatusData
 	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
 
-	if data.Message != "" && data.Message != " " {
-		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
-		commentBytes, _ := json.Marshal(comment)
-
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
+	if payment.CurrentStatus != nil && status.Action == payment.CurrentStatus.Action {
+		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
 	}
 
 	switch status.Action {
 	case "submitted":
+		if payment.CurrentStatus != nil && payment.CurrentStatus.Action == "accepted" {
+			return nil, fmt.Errorf("%s", "Action already accepted"), http.StatusConflict
+		}
 		go createNewTransaction(versionID, paymentID, data.CreditSourceURI)
 		go emailSubmittedPayment(versionID, paymentID, data.Message)
 	case "accepted":
@@ -103,8 +109,21 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		go emailRejectedPayment(versionID, paymentID, data.Message)
 	}
 
-	agreement.SetPaymentStatus(status)
-	agreement.CurrentStatus = status
+	payment.CurrentStatus = status
+	if agreement.CurrentStatus != nil && !(status.Action == "submitted" && agreement.CurrentStatus.Action == "submitted" && agreement.CurrentStatus.PaymentID == "") {
+		//we're checking here if it's a deposit request. If it's not then we can update the agreement status
+		//If it is a deposit request we want the agreement to keep it's submitted status because it needs to be accepted
+		//before the payment is accepted
+		agreement.CurrentStatus = status
+	}
+
+	//check if there's any message attached
+	if data.Message != "" && data.Message != " " {
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
+		commentBytes, _ := json.Marshal(comment)
+
+		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
+	}
 
 	err = agreement.Save()
 	if err != nil {
