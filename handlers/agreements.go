@@ -52,6 +52,18 @@ func FindUserAgreements(params map[string]interface{}, body []byte) ([]byte, err
 	return displayData, nil, http.StatusOK
 }
 
+func FindUserArchivedAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var usersAgrmnts []*models.Agreement
+	userID := params["id"].(string)
+	clientAgrmnts, _ := models.FindArchivedByClientID(userID)
+	freelancerAgrmnts, _ := models.FindArchivedByFreelancerID(userID)
+	usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
+	usersAgrmnts = append(usersAgrmnts, clientAgrmnts...)
+
+	displayData, _ := json.Marshal(usersAgrmnts)
+	return displayData, nil, http.StatusOK
+}
+
 func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 
@@ -98,6 +110,7 @@ func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 	agreement.Archived = true
+	agreement.Final = true
 
 	//if there are payments outstanding and the user is archiving then send an email to the other user
 	if agreement.GetFirstOutstandingPayment() != nil {

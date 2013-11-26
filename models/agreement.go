@@ -21,6 +21,7 @@ type Agreement struct {
 	StatusHistory    statusHistory `json:"statusHistory"`
 	LastModified     time.Time     `json:"lastModified"`
 	Archived         bool          `json:"archived"`
+	Final            bool          `json:"final"`
 	Draft            bool          `json:"draft"`
 	CurrentStatus    *Status       `json:"currentStatus"`
 }
@@ -101,6 +102,46 @@ func FindLiveAgreementsByClientID(id string) (agrmnts []*Agreement, err error) {
 
 func FindAgreementByFreelancerID(id string) (agrmnts []*Agreement, err error) {
 	r, err := DB.FindAgreementByFreelancerID.Query(id)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agrmnts = append(agrmnts, a)
+	}
+	return agrmnts, nil
+}
+
+func FindArchivedByFreelancerID(id string) (agrmnts []*Agreement, err error) {
+	r, err := DB.FindArchivedByFreelancerID.Query(id)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agrmnts = append(agrmnts, a)
+	}
+	return agrmnts, nil
+}
+
+func FindArchivedByClientID(id string) (agrmnts []*Agreement, err error) {
+	r, err := DB.FindArchivedByClientID.Query(id)
 	if err != nil {
 		return nil, err
 	}

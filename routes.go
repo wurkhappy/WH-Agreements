@@ -47,6 +47,12 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
+			PathExp: "/user/:id/archives",
+			Dest: map[string]interface{}{
+				"GET": handlers.FindUserArchivedAgreements,
+			},
+		},
+		urlrouter.Route{
 			PathExp: "/agreements/v/:id/owners",
 			Dest: map[string]interface{}{
 				"GET": handlers.GetVersionOwner,

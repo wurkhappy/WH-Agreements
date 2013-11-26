@@ -11,6 +11,8 @@ var UpsertAgreement *sql.Stmt
 var FindAgreementByVersionID *sql.Stmt
 var FindLiveAgreementsByClientID *sql.Stmt
 var FindAgreementByFreelancerID *sql.Stmt
+var FindArchivedByFreelancerID *sql.Stmt
+var FindArchivedByClientID *sql.Stmt
 var DeleteAgreement *sql.Stmt
 var FindLiveVersions *sql.Stmt
 var UpsertStatus *sql.Stmt
@@ -44,6 +46,16 @@ func CreateStatements() {
 	}
 
 	FindAgreementByFreelancerID, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'freelancerID' = $1 AND data->>'archived' = 'false'")
+	if err != nil {
+		panic(err)
+	}
+
+	FindArchivedByClientID, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'clientID' = $1 AND data->>'archived' = 'true' AND data->>'final' = 'true'")
+	if err != nil {
+		panic(err)
+	}
+
+	FindArchivedByFreelancerID, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'freelancerID' = $1 AND data->>'archived' = 'true' AND data->>'final' = 'true'")
 	if err != nil {
 		panic(err)
 	}
