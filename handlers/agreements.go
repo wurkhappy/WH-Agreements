@@ -74,6 +74,9 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	if err != nil {
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
+	if !agreement.Draft {
+		return nil, fmt.Errorf("%s", "Updating not allowed"), http.StatusBadRequest
+	}
 	json.Unmarshal(body, &agreement)
 
 	//get the client's info
