@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-var ctx *DB.Context
-
 func init() {
 
 	DB.Name = "testdb"

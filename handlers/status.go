@@ -155,13 +155,14 @@ func createNewTransaction(versionID, paymentID, creditURI string) {
 		"paymentID":       paymentID,
 		"amount":          amount,
 	}
+	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
 		"Method": "POST",
-		"Body":   m,
+		"Body":   bodyJSON,
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct", "transactions", "/transactions")
+	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
 	publisher.Publish(body, true)
 }
 
@@ -170,12 +171,13 @@ func sendPayment(status *models.Status, debitURI string) {
 	m := map[string]interface{}{
 		"debitSourceURI": debitURI,
 	}
+	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
 		"Method": "PUT",
-		"Body":   m,
+		"Body":   bodyJSON,
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, "transactions", "direct", "transactions", "/payment/"+status.PaymentID+"/transaction")
+	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+status.PaymentID+"/transaction")
 	publisher.Publish(body, true)
 }
