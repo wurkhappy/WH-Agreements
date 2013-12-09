@@ -9,21 +9,23 @@ import (
 )
 
 type Agreement struct {
-	AgreementID      string        `json:"agreementID"`
-	VersionID        string        `json:"versionID"` //tracks agreements across versions
-	Version          int           `json:"version"`
-	ClientID         string        `json:"clientID"`
-	FreelancerID     string        `json:"freelancerID"`
-	Title            string        `json:"title"`
-	ProposedServices string        `json:"proposedServices"`
-	RefundPolicy     string        `json:"refundPolicy"`
-	Payments         []*Payment    `json:"payments"`
-	StatusHistory    statusHistory `json:"statusHistory"`
-	LastModified     time.Time     `json:"lastModified"`
-	Archived         bool          `json:"archived"`
-	Final            bool          `json:"final"`
-	Draft            bool          `json:"draft"`
-	CurrentStatus    *Status       `json:"currentStatus"`
+	AgreementID         string        `json:"agreementID,omitempty"`
+	VersionID           string        `json:"versionID,omitempty"` //tracks agreements across versions
+	Version             int           `json:"version"`
+	ClientID            string        `json:"clientID"`
+	FreelancerID        string        `json:"freelancerID"`
+	Title               string        `json:"title"`
+	ProposedServices    string        `json:"proposedServices"`
+	RefundPolicy        string        `json:"refundPolicy"`
+	Payments            []*Payment    `json:"payments"`
+	StatusHistory       statusHistory `json:"statusHistory"`
+	LastModified        time.Time     `json:"lastModified"`
+	Archived            bool          `json:"archived"`
+	Final               bool          `json:"final"`
+	Draft               bool          `json:"draft"`
+	CurrentStatus       *Status       `json:"currentStatus"`
+	AcceptsCreditCard   bool          `json:"acceptsCreditCard"`
+	AcceptsBankTransfer bool          `json:"acceptsBankTransfer"`
 }
 
 func NewAgreement() *Agreement {
@@ -31,7 +33,7 @@ func NewAgreement() *Agreement {
 	return &Agreement{
 		VersionID:     id.String(),
 		StatusHistory: nil,
-		Version:       0,
+		Version:       0, //agreement doesn't get a version number until it has been submitted
 		AgreementID:   id.String(),
 		Draft:         true,
 	}
