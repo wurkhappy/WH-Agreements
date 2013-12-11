@@ -215,7 +215,7 @@ func (a *Agreement) SetPaymentStatus(status *Status) {
 
 func (a *Agreement) GetFirstOutstandingPayment() *Payment {
 	for _, payment := range a.Payments {
-		if payment.CurrentStatus.Action != "accepted" {
+		if payment.CurrentStatus != nil && payment.CurrentStatus.Action != "accepted" {
 			return payment
 		}
 	}
@@ -229,4 +229,16 @@ func (a *Agreement) GetPayment(id string) *Payment {
 		}
 	}
 	return nil
+}
+
+func (a *Agreement) IsCompleted() bool {
+	numberOfPayments := len(a.Payments)
+	var numberOfPaidPayments int
+	for _, payment := range a.Payments {
+		if payment.CurrentStatus != nil && payment.CurrentStatus.Action == "accepted" {
+			numberOfPaidPayments += 1
+		}
+	}
+
+	return numberOfPayments == numberOfPaidPayments
 }

@@ -189,3 +189,18 @@ func test_Archive(t *testing.T) {
 		t.Errorf("%s--- agreement wasn't archived", "test_Archive")
 	}
 }
+
+func test_IsCompleted(t *testing.T) {
+	agreement := NewAgreement()
+	payment1 := new(Payment)
+	payment1.CurrentStatus = CreateStatus(agreement.AgreementID, agreement.VersionID, "", "accepted", agreement.Version)
+	agreement.Payments = append(agreement.Payments, payment1)
+	if !agreement.IsCompleted() {
+		t.Error("incomplete agreement when agreement is completed")
+	}
+	payment2 := new(Payment)
+	agreement.Payments = append(agreement.Payments, payment2)
+	if agreement.IsCompleted() {
+		t.Error("completed agreement when agreement is incomplete")
+	}
+}

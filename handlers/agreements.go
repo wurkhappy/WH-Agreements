@@ -116,7 +116,7 @@ func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error
 	agreement.Final = true
 
 	//if there are payments outstanding and the user is archiving then send an email to the other user
-	if agreement.GetFirstOutstandingPayment() != nil {
+	if agreement.IsCompleted() {
 		go emailArchivedAgreement(agreement)
 	}
 	err = agreement.Save()
