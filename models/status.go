@@ -20,6 +20,7 @@ type Status struct {
 	PaymentID          string    `json:"paymentID" bson:",omitempty"`
 	Action             string    `json:"action"`
 	Date               time.Time `json:"date"`
+	UserID             string    `json:"userID"`
 }
 
 func CreateStatus(agrmntID, versionID, paymentID, action string, versionNumber int) *Status {
