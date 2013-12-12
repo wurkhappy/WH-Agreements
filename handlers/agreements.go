@@ -15,6 +15,10 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 		return nil, fmt.Errorf("%s", "Wrong value types"), http.StatusBadRequest
 	}
 
+	agreement.DraftCreatorID = agreement.FreelancerID
+	if agreement.FreelancerID == "" {
+		agreement.DraftCreatorID = agreement.ClientID
+	}
 	agreement.AddIDtoPayments()
 	err = agreement.Save()
 	if err != nil {
@@ -41,12 +45,8 @@ func GetAgreement(params map[string]interface{}, body []byte) ([]byte, error, in
 }
 
 func FindUserAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
-	var usersAgrmnts []*models.Agreement
 	userID := params["id"].(string)
-	clientAgrmnts, _ := models.FindLiveAgreementsByClientID(userID)
-	freelancerAgrmnts, _ := models.FindAgreementByFreelancerID(userID)
-	usersAgrmnts = append(usersAgrmnts, freelancerAgrmnts...)
-	usersAgrmnts = append(usersAgrmnts, clientAgrmnts...)
+	usersAgrmnts, _ := models.FindAgreementByUserID(userID)
 
 	displayData, _ := json.Marshal(usersAgrmnts)
 	return displayData, nil, http.StatusOK
@@ -82,7 +82,11 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	//get the client's info
 	if email, ok := reqData["clientEmail"]; ok {
 		clientData := getUserInfo(email.(string))
-		agreement.ClientID = clientData["id"].(string)
+		if agreement.ClientID == "" {
+			agreement.ClientID = clientData["id"].(string)
+		} else {
+			agreement.FreelancerID = clientData["id"].(string)
+		}
 	}
 	agreement.AddIDtoPayments()
 	err = agreement.Save()

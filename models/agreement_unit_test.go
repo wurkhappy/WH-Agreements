@@ -161,6 +161,31 @@ func test_FindAgreementByFreelancerID(t *testing.T) {
 	}
 }
 
+func test_FindAgreementByUserID(t *testing.T) {
+	agreement1 := NewAgreement()
+	id, _ := uuid.NewV4()
+	agreement1.FreelancerID = id.String()
+	agreement1.Draft = false
+	agreement1.Save()
+	agreement2 := NewAgreement()
+	agreement2.ClientID = id.String()
+	agreement2.Draft = false
+	agreement2.Save()
+
+	agreements, err := FindAgreementByUserID(agreement1.FreelancerID)
+	if err != nil {
+		t.Errorf("error finding agreements: %s", err)
+	}
+	if len(agreements) != 2 {
+		t.Error("wrong number of agreements returned")
+	}
+
+	agreements2, _ := FindAgreementByUserID("invalid id")
+	if len(agreements2) != 0 {
+		t.Error("agreements returned with invalid id input")
+	}
+}
+
 func test_DeleteAgreementWithVersionID(t *testing.T) {
 	agreement := NewAgreement()
 	agreement.Save()

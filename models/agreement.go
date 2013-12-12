@@ -23,6 +23,7 @@ type Agreement struct {
 	Archived            bool          `json:"archived"`
 	Final               bool          `json:"final"`
 	Draft               bool          `json:"draft"`
+	DraftCreatorID      string        `json:"draftCreatorID"`
 	CurrentStatus       *Status       `json:"currentStatus"`
 	AcceptsCreditCard   bool          `json:"acceptsCreditCard"`
 	AcceptsBankTransfer bool          `json:"acceptsBankTransfer"`
@@ -104,6 +105,26 @@ func FindLiveAgreementsByClientID(id string) (agrmnts []*Agreement, err error) {
 
 func FindAgreementByFreelancerID(id string) (agrmnts []*Agreement, err error) {
 	r, err := DB.FindAgreementByFreelancerID.Query(id)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agrmnts = append(agrmnts, a)
+	}
+	return agrmnts, nil
+}
+
+func FindAgreementByUserID(id string) (agrmnts []*Agreement, err error) {
+	r, err := DB.FindAgreementByUserID.Query(id)
 	if err != nil {
 		return nil, err
 	}

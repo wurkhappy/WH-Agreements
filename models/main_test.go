@@ -28,6 +28,7 @@ func TestIntegrationTests(t *testing.T) {
 		test_DeleteAgreementWithVersionID(t)
 		test_Archive(t)
 		test_SaveStatus(t)
+		test_FindAgreementByUserID(t)
 
 		DB.DB.Exec("DELETE from agreement")
 	}
