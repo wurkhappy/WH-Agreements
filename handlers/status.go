@@ -60,7 +60,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
 
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
+		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
 	}
 
 	agreement.CurrentStatus = status
@@ -122,7 +122,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
 		commentBytes, _ := json.Marshal(comment)
 
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments", commentBytes)
+		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
 	}
 
 	err = agreement.Save()
