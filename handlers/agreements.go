@@ -15,7 +15,7 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 		return nil, fmt.Errorf("%s", "Wrong value types"), http.StatusBadRequest
 	}
 	agreement.SetDraftCreatorID()
-	agreement.AddIDtoPayments()
+	agreement.Payments.AddIDs()
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
@@ -80,7 +80,7 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 		clientData := getUserInfo(email.(string))
 		agreement.SetRecipient(clientData["id"].(string))
 	}
-	agreement.AddIDtoPayments()
+	agreement.Payments.AddIDs()
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
@@ -110,7 +110,7 @@ func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error
 	}
 
 	//if there are payments outstanding and the user is archiving then send an email to the other user
-	if agreement.PaymentsAreCompleted() {
+	if agreement.Payments.AreCompleted() {
 		go emailArchivedAgreement(agreement)
 	}
 

@@ -17,7 +17,7 @@ type Agreement struct {
 	Title               string        `json:"title"`
 	ProposedServices    string        `json:"proposedServices"`
 	RefundPolicy        string        `json:"refundPolicy"`
-	Payments            []*Payment    `json:"payments"`
+	Payments            Payments      `json:"payments"`
 	StatusHistory       statusHistory `json:"statusHistory"`
 	LastModified        time.Time     `json:"lastModified"`
 	Archived            bool          `json:"archived"`
@@ -51,15 +51,6 @@ func (a *Agreement) Save() (err error) {
 		return err
 	}
 	return nil
-}
-
-func (a *Agreement) AddIDtoPayments() {
-	for _, payment := range a.Payments {
-		if payment.ID == "" {
-			id, _ := uuid.NewV4()
-			payment.ID = id.String()
-		}
-	}
 }
 
 func FindLatestAgreementByID(id string) (a *Agreement, err error) {
@@ -224,35 +215,6 @@ func (agreement *Agreement) ArchiveOtherVersions() error {
 		}
 	}
 	return nil
-}
-
-func (a *Agreement) SetPaymentStatus(status *Status) {
-	for _, payment := range a.Payments {
-		if payment.ID == status.PaymentID {
-			payment.CurrentStatus = status
-		}
-	}
-}
-
-func (a *Agreement) GetPayment(id string) *Payment {
-	for _, payment := range a.Payments {
-		if payment.ID == id {
-			return payment
-		}
-	}
-	return nil
-}
-
-func (a *Agreement) PaymentsAreCompleted() bool {
-	numberOfPayments := len(a.Payments)
-	var numberOfPaidPayments int
-	for _, payment := range a.Payments {
-		if payment.CurrentStatus != nil && payment.CurrentStatus.Action == "accepted" {
-			numberOfPaidPayments += 1
-		}
-	}
-
-	return numberOfPayments == numberOfPaidPayments
 }
 
 func (a *Agreement) SetDraftCreatorID() {

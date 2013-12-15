@@ -84,7 +84,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	}
 
 	paymentID := params["paymentID"].(string)
-	payment := agreement.GetPayment(paymentID)
+	payment := agreement.Payments.GetPayment(paymentID)
 
 	var data *StatusData
 	json.Unmarshal(body, &data)

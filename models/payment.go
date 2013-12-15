@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/nu7hatch/gouuid"
 	"time"
 )
 
@@ -22,4 +23,36 @@ type Payment struct {
 
 type ScopeItem struct {
 	Text string `json:"text"`
+}
+
+type Payments []*Payment
+
+func (p Payments) AddIDs() {
+	for _, payment := range p {
+		if payment.ID == "" {
+			id, _ := uuid.NewV4()
+			payment.ID = id.String()
+		}
+	}
+}
+
+func (p Payments) GetPayment(id string) *Payment {
+	for _, payment := range p {
+		if payment.ID == id {
+			return payment
+		}
+	}
+	return nil
+}
+
+func (p Payments) AreCompleted() bool {
+	numberOfPayments := len(p)
+	var numberOfPaidPayments int
+	for _, payment := range p {
+		if payment.CurrentStatus != nil && payment.CurrentStatus.Action == "accepted" {
+			numberOfPaidPayments += 1
+		}
+	}
+
+	return numberOfPayments == numberOfPaidPayments
 }

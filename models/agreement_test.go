@@ -40,17 +40,6 @@ func test_NewAgreement(t *testing.T) {
 	}
 }
 
-func test_AddIDtoPayments(t *testing.T) {
-	agreement := NewAgreement()
-	payment := new(Payment)
-	payment.Title = "test"
-	agreement.Payments = append(agreement.Payments, payment)
-	agreement.AddIDtoPayments()
-	if payment.ID == "" {
-		t.Error("ID was not added to payment")
-	}
-}
-
 func test_SaveAgreement(t *testing.T) {
 	agreement := NewAgreement()
 	err := agreement.Save()
@@ -212,21 +201,6 @@ func test_Archive(t *testing.T) {
 	a, _ := FindAgreementByVersionID(agreement.VersionID)
 	if !a.Archived {
 		t.Errorf("%s--- agreement wasn't archived", "test_Archive")
-	}
-}
-
-func test_PaymentsAreCompleted(t *testing.T) {
-	agreement := NewAgreement()
-	payment1 := new(Payment)
-	payment1.CurrentStatus = CreateStatus(agreement.AgreementID, agreement.VersionID, "", "accepted", agreement.Version)
-	agreement.Payments = append(agreement.Payments, payment1)
-	if !agreement.PaymentsAreCompleted() {
-		t.Error("incomplete agreement when agreement is completed")
-	}
-	payment2 := new(Payment)
-	agreement.Payments = append(agreement.Payments, payment2)
-	if agreement.PaymentsAreCompleted() {
-		t.Error("completed agreement when agreement is incomplete")
 	}
 }
 
