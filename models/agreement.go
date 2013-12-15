@@ -234,15 +234,6 @@ func (a *Agreement) SetPaymentStatus(status *Status) {
 	}
 }
 
-func (a *Agreement) GetFirstOutstandingPayment() *Payment {
-	for _, payment := range a.Payments {
-		if payment.CurrentStatus != nil && payment.CurrentStatus.Action != "accepted" {
-			return payment
-		}
-	}
-	return nil
-}
-
 func (a *Agreement) GetPayment(id string) *Payment {
 	for _, payment := range a.Payments {
 		if payment.ID == id {
@@ -252,7 +243,7 @@ func (a *Agreement) GetPayment(id string) *Payment {
 	return nil
 }
 
-func (a *Agreement) IsCompleted() bool {
+func (a *Agreement) PaymentsAreCompleted() bool {
 	numberOfPayments := len(a.Payments)
 	var numberOfPaidPayments int
 	for _, payment := range a.Payments {
@@ -262,4 +253,25 @@ func (a *Agreement) IsCompleted() bool {
 	}
 
 	return numberOfPayments == numberOfPaidPayments
+}
+
+func (a *Agreement) SetDraftCreatorID() {
+	a.DraftCreatorID = a.FreelancerID
+	if a.FreelancerID == "" {
+		a.DraftCreatorID = a.ClientID
+	}
+}
+
+func (a *Agreement) SetRecipient(id string) {
+	//assumes that one of these fields (clientID or freelancerID) is set before the recipient
+	if a.ClientID == "" {
+		a.ClientID = id
+	} else {
+		a.FreelancerID = id
+	}
+}
+
+func (a *Agreement) SetAsCompleted() {
+	a.Archived = true
+	a.Final = true
 }

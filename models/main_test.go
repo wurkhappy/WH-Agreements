@@ -16,7 +16,9 @@ func TestUnitTests(t *testing.T) {
 	test_NewAgreement(t)
 	test_AddIDtoPayments(t)
 	test_CreateStatus(t)
-	test_IsCompleted(t)
+	test_PaymentsAreCompleted(t)
+	test_SetDraftCreatorID(t)
+	test_SetRecipient(t)
 }
 func TestIntegrationTests(t *testing.T) {
 	if !testing.Short() {

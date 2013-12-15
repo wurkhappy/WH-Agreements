@@ -14,11 +14,7 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	if err != nil {
 		return nil, fmt.Errorf("%s", "Wrong value types"), http.StatusBadRequest
 	}
-
-	agreement.DraftCreatorID = agreement.FreelancerID
-	if agreement.FreelancerID == "" {
-		agreement.DraftCreatorID = agreement.ClientID
-	}
+	agreement.SetDraftCreatorID()
 	agreement.AddIDtoPayments()
 	err = agreement.Save()
 	if err != nil {
@@ -82,11 +78,7 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	//get the client's info
 	if email, ok := reqData["clientEmail"]; ok {
 		clientData := getUserInfo(email.(string))
-		if agreement.ClientID == "" {
-			agreement.ClientID = clientData["id"].(string)
-		} else {
-			agreement.FreelancerID = clientData["id"].(string)
-		}
+		agreement.SetRecipient(clientData["id"].(string))
 	}
 	agreement.AddIDtoPayments()
 	err = agreement.Save()
@@ -116,13 +108,13 @@ func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error
 	if err != nil {
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
-	agreement.Archived = true
-	agreement.Final = true
 
 	//if there are payments outstanding and the user is archiving then send an email to the other user
-	if agreement.IsCompleted() {
+	if agreement.PaymentsAreCompleted() {
 		go emailArchivedAgreement(agreement)
 	}
+
+	agreement.SetAsCompleted()
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest

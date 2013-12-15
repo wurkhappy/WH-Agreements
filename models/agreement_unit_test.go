@@ -215,17 +215,52 @@ func test_Archive(t *testing.T) {
 	}
 }
 
-func test_IsCompleted(t *testing.T) {
+func test_PaymentsAreCompleted(t *testing.T) {
 	agreement := NewAgreement()
 	payment1 := new(Payment)
 	payment1.CurrentStatus = CreateStatus(agreement.AgreementID, agreement.VersionID, "", "accepted", agreement.Version)
 	agreement.Payments = append(agreement.Payments, payment1)
-	if !agreement.IsCompleted() {
+	if !agreement.PaymentsAreCompleted() {
 		t.Error("incomplete agreement when agreement is completed")
 	}
 	payment2 := new(Payment)
 	agreement.Payments = append(agreement.Payments, payment2)
-	if agreement.IsCompleted() {
+	if agreement.PaymentsAreCompleted() {
 		t.Error("completed agreement when agreement is incomplete")
+	}
+}
+
+func test_SetDraftCreatorID(t *testing.T) {
+	agreement := NewAgreement()
+	id, _ := uuid.NewV4()
+	agreement.FreelancerID = id.String()
+	agreement.SetDraftCreatorID()
+	if agreement.DraftCreatorID != id.String() {
+		t.Error("freelancer wasn't set as draft creator")
+	}
+
+	agreement = NewAgreement()
+	agreement.ClientID = id.String()
+	agreement.SetDraftCreatorID()
+	if agreement.DraftCreatorID != id.String() {
+		t.Error("client wasn't set as draft creator")
+	}
+}
+
+func test_SetRecipient(t *testing.T) {
+	agreement := NewAgreement()
+	id, _ := uuid.NewV4()
+	agreement.FreelancerID = id.String()
+	otherid, _ := uuid.NewV4()
+	agreement.SetRecipient(otherid.String())
+	if agreement.ClientID != otherid.String() {
+		t.Error("correct client id was not set")
+	}
+
+	agreement = NewAgreement()
+	agreement.ClientID = id.String()
+	agreement.SetRecipient(otherid.String())
+	if agreement.FreelancerID != otherid.String() {
+		t.Error("correct freelancer id was not set")
 	}
 }
