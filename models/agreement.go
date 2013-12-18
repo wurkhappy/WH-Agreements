@@ -228,7 +228,7 @@ func (a *Agreement) SetRecipient(id string) {
 	//assumes that one of these fields (clientID or freelancerID) is set before the recipient
 	if a.ClientID == "" {
 		a.ClientID = id
-	} else {
+	} else if a.FreelancerID == "" {
 		a.FreelancerID = id
 	}
 }

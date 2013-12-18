@@ -15,6 +15,7 @@ type StatusData struct {
 	UserID          string `json:"userID"`
 	CreditSourceURI string `json:"creditSourceURI"`
 	DebitSourceURI  string `json:"debitSourceURI"`
+	PaymentType     string `json:"paymentType"`
 }
 
 type Comment struct {
@@ -104,7 +105,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		go createNewTransaction(versionID, paymentID, data.CreditSourceURI)
 		go emailSubmittedPayment(versionID, paymentID, data.Message)
 	case "accepted":
-		go sendPayment(status, data.DebitSourceURI)
+		go sendPayment(status, data.DebitSourceURI, data.PaymentType)
 		go emailSentPayment(versionID, paymentID, data.Message)
 		go emailAcceptedPayment(versionID, paymentID, data.Message)
 	case "rejected":
@@ -168,10 +169,11 @@ func createNewTransaction(versionID, paymentID, creditURI string) {
 	publisher.Publish(body, true)
 }
 
-func sendPayment(status *models.Status, debitURI string) {
+func sendPayment(status *models.Status, debitURI string, paymentType string) {
 
 	m := map[string]interface{}{
 		"debitSourceURI": debitURI,
+		"paymentType":    paymentType,
 	}
 	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
