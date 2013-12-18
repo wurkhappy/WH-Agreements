@@ -36,6 +36,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	var data *StatusData
 	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
+	status.UserID = data.UserID
 
 	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action {
 		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
@@ -89,6 +90,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	var data *StatusData
 	json.Unmarshal(body, &data)
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
+	status.UserID = data.UserID
 
 	if payment.CurrentStatus != nil && status.Action == payment.CurrentStatus.Action {
 		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
