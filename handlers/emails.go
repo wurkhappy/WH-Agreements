@@ -88,6 +88,10 @@ func emailSubmittedPayment(agreementID, paymentID, message string) {
 		}
 	}
 
+	if payment.Required {
+		return
+	}
+
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
 			"agreement": agreement,
