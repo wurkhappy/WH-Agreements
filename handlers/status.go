@@ -86,7 +86,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	}
 
 	paymentID := params["paymentID"].(string)
-	payment := agreement.Payments.GetPayment(paymentID)
+	payment := agreement.WorkItems.GetWorkItem(paymentID)
 
 	var data *StatusData
 	json.Unmarshal(body, &data)
@@ -113,7 +113,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	}
 
 	payment.CurrentStatus = status
-	if agreement.CurrentStatus != nil && !(status.Action == "submitted" && agreement.CurrentStatus.Action == "submitted" && agreement.CurrentStatus.PaymentID == "") {
+	if agreement.CurrentStatus != nil && !(status.Action == "submitted" && agreement.CurrentStatus.Action == "submitted" && agreement.CurrentStatus.ParentID == "") {
 		//we're checking here if it's a deposit request. If it's not then we can update the agreement status
 		//If it is a deposit request we want the agreement to keep it's submitted status because it needs to be accepted
 		//before the payment is accepted
@@ -144,7 +144,7 @@ func createNewTransaction(versionID, paymentID, creditURI string) {
 	agreement, _ := models.FindAgreementByVersionID(versionID)
 
 	var amount int
-	for _, payment := range agreement.Payments {
+	for _, payment := range agreement.WorkItems {
 		if payment.ID == paymentID {
 			amount = payment.Amount
 		}
@@ -182,6 +182,6 @@ func sendPayment(status *models.Status, debitURI string, paymentType string) {
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+status.PaymentID+"/transaction")
+	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+status.ParentID+"/transaction")
 	publisher.Publish(body, true)
 }

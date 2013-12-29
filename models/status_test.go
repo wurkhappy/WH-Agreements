@@ -19,7 +19,7 @@ func test_CreateStatus(t *testing.T) {
 	if status.AgreementVersionID != versionID.String() {
 		t.Error("wrong version ID returned")
 	}
-	if status.PaymentID != paymentID.String() {
+	if status.ParentID != paymentID.String() {
 		t.Error("wrong payment ID returned")
 	}
 	if status.Action != action {
@@ -31,7 +31,7 @@ func test_CreateStatus(t *testing.T) {
 	if status.ID == "" {
 		t.Error("id not set")
 	}
-	if  time.Now().Unix() - status.Date.Unix() > 1{
+	if time.Now().Unix()-status.Date.Unix() > 1 {
 		t.Error("wrong date set")
 	}
 }

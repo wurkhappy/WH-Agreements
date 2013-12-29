@@ -81,8 +81,8 @@ func emailChangedAgreement(agreement *models.Agreement, message string) {
 
 func emailSubmittedPayment(agreementID, paymentID, message string) {
 	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.Payment
-	for _, pymnt := range agreement.Payments {
+	var payment *models.WorkItem
+	for _, pymnt := range agreement.WorkItems {
 		if pymnt.ID == paymentID {
 			payment = pymnt
 		}
@@ -107,8 +107,8 @@ func emailSubmittedPayment(agreementID, paymentID, message string) {
 
 func emailSentPayment(agreementID, paymentID, message string) {
 	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.Payment
-	for _, pymnt := range agreement.Payments {
+	var payment *models.WorkItem
+	for _, pymnt := range agreement.WorkItems {
 		if pymnt.ID == paymentID {
 			payment = pymnt
 		}
@@ -129,8 +129,8 @@ func emailSentPayment(agreementID, paymentID, message string) {
 
 func emailRejectedPayment(agreementID, paymentID, message string) {
 	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.Payment
-	for _, pymnt := range agreement.Payments {
+	var payment *models.WorkItem
+	for _, pymnt := range agreement.WorkItems {
 		if pymnt.ID == paymentID {
 			payment = pymnt
 		}
@@ -151,8 +151,8 @@ func emailRejectedPayment(agreementID, paymentID, message string) {
 
 func emailAcceptedPayment(agreementID, paymentID, message string) {
 	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.Payment
-	for _, pymnt := range agreement.Payments {
+	var payment *models.WorkItem
+	for _, pymnt := range agreement.WorkItems {
 		if pymnt.ID == paymentID {
 			payment = pymnt
 		}

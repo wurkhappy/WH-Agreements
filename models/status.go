@@ -17,7 +17,7 @@ type Status struct {
 	AgreementID        string    `json:"agreementID"`
 	AgreementVersionID string    `json:"agreementVersionID"`
 	AgreementVersion   int       `json:"agreementVersion"`
-	PaymentID          string    `json:"paymentID" bson:",omitempty"`
+	ParentID           string    `json:"paymentID"`
 	Action             string    `json:"action"`
 	Date               time.Time `json:"date"`
 	UserID             string    `json:"userID"`
@@ -30,7 +30,7 @@ func CreateStatus(agrmntID, versionID, paymentID, action string, versionNumber i
 		Date:               time.Now(),
 		Action:             action,
 		AgreementID:        agrmntID,
-		PaymentID:          paymentID,
+		ParentID:           paymentID,
 		AgreementVersionID: versionID,
 		AgreementVersion:   versionNumber,
 	}
