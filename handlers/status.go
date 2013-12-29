@@ -59,12 +59,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 		go emailRejectedAgreement(status.AgreementID, data.Message)
 	}
 
-	if data.Message != "" && data.Message != " " {
-		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID}
-		commentBytes, _ := json.Marshal(comment)
-
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
-	}
+	go createComment(agreement, nil, data.Message, status.UserID)
 
 	agreement.CurrentStatus = status
 	err = agreement.Save()
@@ -120,13 +115,7 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		go emailRejectedPayment(versionID, payment.ID, data.Message)
 	}
 
-	//check if there's any message attached
-	if data.Message != "" && data.Message != " " {
-		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: payment.ID}
-		commentBytes, _ := json.Marshal(comment)
-
-		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
-	}
+	go createComment(agreement, payment, data.Message, status.UserID)
 
 	err = agreement.Save()
 	if err != nil {
@@ -180,4 +169,14 @@ func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 	body, _ := json.Marshal(message)
 	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	publisher.Publish(body, true)
+}
+
+func createComment(agreement *models.Agreement, payment *models.Payment, message string, userID string) {
+	//check if there's any message attached
+	if message != "" && message != " " {
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: message, UserID: userID, AgreementID: agreement.AgreementID}
+		commentBytes, _ := json.Marshal(comment)
+
+		sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
+	}
 }
