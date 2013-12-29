@@ -17,7 +17,8 @@ type Agreement struct {
 	Title               string        `json:"title"`
 	ProposedServices    string        `json:"proposedServices"`
 	RefundPolicy        string        `json:"refundPolicy"`
-	WorkItems           WorkItems     `json:"payments"`
+	WorkItems           WorkItems     `json:"workItems"`
+	Payments            Payments      `json:"payments"`
 	StatusHistory       statusHistory `json:"statusHistory"`
 	LastModified        time.Time     `json:"lastModified"`
 	Archived            bool          `json:"archived"`

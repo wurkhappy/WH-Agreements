@@ -14,13 +14,14 @@ type WorkItem struct {
 	Amount        int          `json:"amount"`
 	ScopeItems    []*ScopeItem `json:"scopeItems"`
 	Title         string       `json:"title"`
-	CurrentStatus *Status      `json:"currentStatus" bson:",omitempty"`
+	CurrentStatus *Status      `json:"currentStatus"`
 	DateExpected  time.Time    `json:"dateExpected"`
 	Required      bool         `json:"required"`
+	Completed     bool         `json:"completed"`
 
 	//we won't store this but we need this data to delegate to the Payment service
-	PaymentMethodID    string `json:"paymentMethodID" bson:"-"`
-	RecipientAccountID string `json:"recipientAccountID" bson:"-"`
+	PaymentMethodID    string `json:"paymentMethodID"`
+	RecipientAccountID string `json:"recipientAccountID"`
 }
 
 type ScopeItem struct {
@@ -29,8 +30,8 @@ type ScopeItem struct {
 
 type WorkItems []*WorkItem
 
-func (p WorkItems) AddIDs() {
-	for _, workItem := range p {
+func (w WorkItems) AddIDs() {
+	for _, workItem := range w {
 		if workItem.ID == "" {
 			id, _ := uuid.NewV4()
 			workItem.ID = id.String()
@@ -38,8 +39,8 @@ func (p WorkItems) AddIDs() {
 	}
 }
 
-func (p WorkItems) GetWorkItem(id string) *WorkItem {
-	for _, workItem := range p {
+func (w WorkItems) GetWorkItem(id string) *WorkItem {
+	for _, workItem := range w {
 		if workItem.ID == id {
 			return workItem
 		}
@@ -47,10 +48,10 @@ func (p WorkItems) GetWorkItem(id string) *WorkItem {
 	return nil
 }
 
-func (p WorkItems) AreCompleted() bool {
-	numberOfWorkItems := len(p)
+func (w WorkItems) AreCompleted() bool {
+	numberOfWorkItems := len(w)
 	var numberOfPaidWorkItems int
-	for _, workItem := range p {
+	for _, workItem := range w {
 		if workItem.CurrentStatus != nil && workItem.CurrentStatus.Action == "accepted" {
 			numberOfPaidWorkItems += 1
 		}

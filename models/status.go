@@ -23,14 +23,14 @@ type Status struct {
 	UserID             string    `json:"userID"`
 }
 
-func CreateStatus(agrmntID, versionID, paymentID, action string, versionNumber int) *Status {
+func CreateStatus(agrmntID, versionID, parentID, action string, versionNumber int) *Status {
 	id, _ := uuid.NewV4()
 	return &Status{
 		ID:                 id.String(),
 		Date:               time.Now(),
 		Action:             action,
 		AgreementID:        agrmntID,
-		ParentID:           paymentID,
+		ParentID:           parentID,
 		AgreementVersionID: versionID,
 		AgreementVersion:   versionNumber,
 	}

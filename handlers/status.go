@@ -10,12 +10,13 @@ import (
 )
 
 type StatusData struct {
-	Action          string `json:"action"`
-	Message         string `json:"message"`
-	UserID          string `json:"userID"`
-	CreditSourceURI string `json:"creditSourceURI"`
-	DebitSourceURI  string `json:"debitSourceURI"`
-	PaymentType     string `json:"paymentType"`
+	Action          string           `json:"action"`
+	Message         string           `json:"message"`
+	UserID          string           `json:"userID"`
+	CreditSourceURI string           `json:"creditSourceURI"`
+	DebitSourceURI  string           `json:"debitSourceURI"`
+	PaymentType     string           `json:"paymentType"`
+	WorkItems       models.WorkItems `json:"workItems"`
 }
 
 type Comment struct {
@@ -85,44 +86,43 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 
-	paymentID := params["paymentID"].(string)
-	payment := agreement.WorkItems.GetWorkItem(paymentID)
+	var paymentID string
+	if idpymnt, ok := params["paymentID"]; ok {
+		paymentID = idpymnt.(string)
+	}
+	payment := agreement.Payments.GetPayment(paymentID)
+	if payment == nil {
+		payment = models.NewPayment()
+	}
 
 	var data *StatusData
 	json.Unmarshal(body, &data)
-	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, paymentID, data.Action, agreement.Version)
-	status.UserID = data.UserID
+	payment.WorkItems = data.WorkItems
 
-	if payment.CurrentStatus != nil && status.Action == payment.CurrentStatus.Action {
-		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
+	status.UserID = data.UserID
+	payment.CurrentStatus = status
+
+	for _, workItem := range payment.WorkItems {
+		statusWI := models.CreateStatus(agreement.AgreementID, agreement.VersionID, workItem.ID, data.Action, agreement.Version)
+		statusWI.UserID = data.UserID
 	}
 
 	switch status.Action {
 	case "submitted":
-		if payment.CurrentStatus != nil && payment.CurrentStatus.Action == "accepted" {
-			return nil, fmt.Errorf("%s", "Action already accepted"), http.StatusConflict
-		}
-		go createNewTransaction(versionID, paymentID, data.CreditSourceURI)
-		go emailSubmittedPayment(versionID, paymentID, data.Message)
+		go createNewTransaction(agreement, payment, data.CreditSourceURI)
+		go emailSubmittedPayment(versionID, payment.ID, data.Message)
 	case "accepted":
-		go sendPayment(status, data.DebitSourceURI, data.PaymentType)
-		go emailSentPayment(versionID, paymentID, data.Message)
-		go emailAcceptedPayment(versionID, paymentID, data.Message)
+		go sendPayment(payment, data.DebitSourceURI, data.PaymentType)
+		go emailSentPayment(versionID, payment.ID, data.Message)
+		go emailAcceptedPayment(versionID, payment.ID, data.Message)
 	case "rejected":
-		go emailRejectedPayment(versionID, paymentID, data.Message)
-	}
-
-	payment.CurrentStatus = status
-	if agreement.CurrentStatus != nil && !(status.Action == "submitted" && agreement.CurrentStatus.Action == "submitted" && agreement.CurrentStatus.ParentID == "") {
-		//we're checking here if it's a deposit request. If it's not then we can update the agreement status
-		//If it is a deposit request we want the agreement to keep it's submitted status because it needs to be accepted
-		//before the payment is accepted
-		agreement.CurrentStatus = status
+		go emailRejectedPayment(versionID, payment.ID, data.Message)
 	}
 
 	//check if there's any message attached
 	if data.Message != "" && data.Message != " " {
-		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: paymentID}
+		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: data.Message, StatusID: status.ID, UserID: data.UserID, AgreementID: agreement.AgreementID, MilestoneID: payment.ID}
 		commentBytes, _ := json.Marshal(comment)
 
 		go sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
@@ -140,14 +140,10 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	return s, nil, http.StatusOK
 }
 
-func createNewTransaction(versionID, paymentID, creditURI string) {
-	agreement, _ := models.FindAgreementByVersionID(versionID)
-
+func createNewTransaction(agreement *models.Agreement, payment *models.Payment, creditURI string) {
 	var amount int
-	for _, payment := range agreement.WorkItems {
-		if payment.ID == paymentID {
-			amount = payment.Amount
-		}
+	for _, workItem := range payment.WorkItems {
+		amount += workItem.Amount
 	}
 
 	m := map[string]interface{}{
@@ -155,7 +151,7 @@ func createNewTransaction(versionID, paymentID, creditURI string) {
 		"clientID":        agreement.ClientID,
 		"freelancerID":    agreement.FreelancerID,
 		"agreementID":     agreement.AgreementID,
-		"paymentID":       paymentID,
+		"paymentID":       payment.ID,
 		"amount":          amount,
 	}
 	bodyJSON, _ := json.Marshal(m)
@@ -169,7 +165,7 @@ func createNewTransaction(versionID, paymentID, creditURI string) {
 	publisher.Publish(body, true)
 }
 
-func sendPayment(status *models.Status, debitURI string, paymentType string) {
+func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 
 	m := map[string]interface{}{
 		"debitSourceURI": debitURI,
@@ -182,6 +178,6 @@ func sendPayment(status *models.Status, debitURI string, paymentType string) {
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+status.ParentID+"/transaction")
+	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	publisher.Publish(body, true)
 }
