@@ -12,8 +12,7 @@ import (
 	// "net/http"
 )
 
-func emailSubmittedAgreement(agreementID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
+func emailSubmittedAgreement(agreement *models.Agreement, message string) {
 	if agreement.Version > 1 {
 		emailChangedAgreement(agreement, message)
 	} else {
@@ -35,9 +34,7 @@ func emailNewAgreement(agreement *models.Agreement, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailAcceptedAgreement(agreementID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
-
+func emailAcceptedAgreement(agreement *models.Agreement, message string) {
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
 			"agreement": agreement,
@@ -50,8 +47,7 @@ func emailAcceptedAgreement(agreementID, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailRejectedAgreement(agreementID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
+func emailRejectedAgreement(agreement *models.Agreement, message string) {
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -79,18 +75,7 @@ func emailChangedAgreement(agreement *models.Agreement, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailSubmittedPayment(agreementID, paymentID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.WorkItem
-	for _, pymnt := range agreement.WorkItems {
-		if pymnt.ID == paymentID {
-			payment = pymnt
-		}
-	}
-
-	if payment.Required {
-		return
-	}
+func emailSubmittedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -105,14 +90,7 @@ func emailSubmittedPayment(agreementID, paymentID, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailSentPayment(agreementID, paymentID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.WorkItem
-	for _, pymnt := range agreement.WorkItems {
-		if pymnt.ID == paymentID {
-			payment = pymnt
-		}
-	}
+func emailSentPayment(agreement *models.Agreement, payment *models.Payment, message string) {
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -127,14 +105,7 @@ func emailSentPayment(agreementID, paymentID, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailRejectedPayment(agreementID, paymentID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.WorkItem
-	for _, pymnt := range agreement.WorkItems {
-		if pymnt.ID == paymentID {
-			payment = pymnt
-		}
-	}
+func emailRejectedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{
@@ -149,14 +120,7 @@ func emailRejectedPayment(agreementID, paymentID, message string) {
 	publisher.Publish(body, true)
 }
 
-func emailAcceptedPayment(agreementID, paymentID, message string) {
-	agreement, _ := models.FindAgreementByVersionID(agreementID)
-	var payment *models.WorkItem
-	for _, pymnt := range agreement.WorkItems {
-		if pymnt.ID == paymentID {
-			payment = pymnt
-		}
-	}
+func emailAcceptedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
 
 	payload := map[string]interface{}{
 		"Body": map[string]interface{}{

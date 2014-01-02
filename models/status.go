@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	// "labix.org/v2/mgo/bson"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -17,7 +18,8 @@ type Status struct {
 	AgreementID        string    `json:"agreementID"`
 	AgreementVersionID string    `json:"agreementVersionID"`
 	AgreementVersion   int       `json:"agreementVersion"`
-	ParentID           string    `json:"paymentID"`
+	ParentID           string    `json:"parentID"`
+	PaymentID          string    `json:"paymentID"`
 	Action             string    `json:"action"`
 	Date               time.Time `json:"date"`
 	UserID             string    `json:"userID"`
@@ -64,4 +66,23 @@ func GetStatusHistory(agreementID string) (statuses []*Status, err error) {
 		statuses = append(statuses, st)
 	}
 	return statuses, nil
+}
+
+func (s *Status) MarshalJSON() ([]byte, error) {
+	var parentID string
+	if s.ParentID == "" {
+		s.ParentID = s.PaymentID
+	} else {
+		parentID = s.ParentID
+	}
+	jsonString := `{"id":"` + s.ID + `",
+	"agreementID":"` + s.AgreementID + `",
+	"agreementVersionID":"` + s.AgreementVersionID + `",
+	"agreementVersion":` + strconv.Itoa(s.AgreementVersion) + `,
+	"parentID":"` + parentID + `",
+	"action":"` + s.Action + `",
+	"date":` + s.Date.Format(`"`+time.RFC3339Nano+`"`) + `,
+	"userID":"` + s.UserID + `"}`
+
+	return []byte(jsonString), nil
 }

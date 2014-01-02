@@ -43,6 +43,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action {
 		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
 	}
+	agreement.CurrentStatus = status
 
 	switch status.Action {
 	case "submitted":
@@ -52,16 +53,15 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 		if err != nil {
 			return nil, fmt.Errorf("%s %s", "Error archiving: ", err.Error()), http.StatusBadRequest
 		}
-		go emailSubmittedAgreement(status.AgreementID, data.Message)
+		go emailSubmittedAgreement(agreement, data.Message)
 	case "accepted":
-		go emailAcceptedAgreement(status.AgreementID, data.Message)
+		go emailAcceptedAgreement(agreement, data.Message)
 	case "rejected":
-		go emailRejectedAgreement(status.AgreementID, data.Message)
+		go emailRejectedAgreement(agreement, data.Message)
 	}
 
 	go createComment(agreement, nil, data.Message, status.UserID)
 
-	agreement.CurrentStatus = status
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
@@ -74,45 +74,37 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	return s, nil, http.StatusOK
 }
 
-func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	versionID := params["versionID"].(string)
 	agreement, err := models.FindAgreementByVersionID(versionID)
 	if err != nil {
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 
-	var paymentID string
-	if idpymnt, ok := params["paymentID"]; ok {
-		paymentID = idpymnt.(string)
-	}
-	payment := agreement.Payments.GetPayment(paymentID)
-	if payment == nil {
-		payment = models.NewPayment()
-	}
+	payment := models.NewPayment()
+	json.Unmarshal(body, &payment)
+	agreement.Payments = append(agreement.Payments, payment)
 
 	var data *StatusData
 	json.Unmarshal(body, &data)
-	payment.WorkItems = data.WorkItems
+	data.Action = "submitted"
 
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
+	fmt.Println(status.ParentID)
 	status.UserID = data.UserID
 	payment.CurrentStatus = status
 
-	for _, workItem := range payment.WorkItems {
-		statusWI := models.CreateStatus(agreement.AgreementID, agreement.VersionID, workItem.ID, data.Action, agreement.Version)
-		statusWI.UserID = data.UserID
-	}
+	go createNewTransaction(agreement, payment, data.CreditSourceURI)
 
-	switch status.Action {
-	case "submitted":
-		go createNewTransaction(agreement, payment, data.CreditSourceURI)
-		go emailSubmittedPayment(versionID, payment.ID, data.Message)
-	case "accepted":
-		go sendPayment(payment, data.DebitSourceURI, data.PaymentType)
-		go emailSentPayment(versionID, payment.ID, data.Message)
-		go emailAcceptedPayment(versionID, payment.ID, data.Message)
-	case "rejected":
-		go emailRejectedPayment(versionID, payment.ID, data.Message)
+	for _, paymentItem := range payment.PaymentItems {
+		workItem := agreement.WorkItems.GetWorkItem(paymentItem.WorkItemID)
+		if workItem.Required {
+			payment.IncludesDeposit = true
+		}
+	}
+	if !payment.IncludesDeposit {
+		agreement.CurrentStatus = status
+		go emailSubmittedPayment(agreement, payment, data.Message)
 	}
 
 	go createComment(agreement, payment, data.Message, status.UserID)
@@ -125,14 +117,76 @@ func CreatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
 	}
+	p, _ := json.Marshal(payment)
+	return p, nil, http.StatusOK
+}
+
+func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	//get the agreeement
+	versionID := params["versionID"].(string)
+	agreement, err := models.FindAgreementByVersionID(versionID)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
+
+	//get the payment
+	var paymentID string
+	if idpymnt, ok := params["paymentID"]; ok {
+		paymentID = idpymnt.(string)
+	}
+	payment := agreement.Payments.GetPayment(paymentID)
+	if payment == nil {
+		return nil, fmt.Errorf("%s", "Error finding payment"), http.StatusBadRequest
+	}
+
+	//create a status
+	var data *StatusData
+	json.Unmarshal(body, &data)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
+	status.UserID = data.UserID
+	payment.CurrentStatus = status
+	agreement.CurrentStatus = status
+
+	//check what action the status is
+	switch status.Action {
+	case "submitted":
+		go createNewTransaction(agreement, payment, data.CreditSourceURI)
+		go emailSubmittedPayment(agreement, payment, data.Message)
+	case "accepted":
+		//if we are accepting a payment then let's update the work items to know if they are completed or not
+		for _, paymentItem := range payment.PaymentItems {
+			workItem := agreement.WorkItems.GetWorkItem(paymentItem.WorkItemID)
+			workItem.AmountPaid = paymentItem.Amount
+		}
+
+		go sendPayment(payment, data.DebitSourceURI, data.PaymentType)
+		go emailSentPayment(agreement, payment, data.Message)
+		go emailAcceptedPayment(agreement, payment, data.Message)
+	case "rejected":
+		go emailRejectedPayment(agreement, payment, data.Message)
+	}
+
+	go createComment(agreement, payment, data.Message, status.UserID)
+
+	//payments and work items are part of the agreement so we need to save the agreement
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
+
+	//status history for the whole agreement is saved separately
+	err = status.Save()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
+	}
 	s, _ := json.Marshal(status)
 	return s, nil, http.StatusOK
 }
 
 func createNewTransaction(agreement *models.Agreement, payment *models.Payment, creditURI string) {
 	var amount int
-	for _, workItem := range payment.WorkItems {
-		amount += workItem.Amount
+	for _, paymentItem := range payment.PaymentItems {
+		amount += paymentItem.Amount
 	}
 
 	m := map[string]interface{}{

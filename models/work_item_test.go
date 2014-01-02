@@ -36,12 +36,14 @@ func test_GetWorkItem(t *testing.T) {
 func test_WorkItemsAreCompleted(t *testing.T) {
 	agreement := NewAgreement()
 	workItem1 := new(WorkItem)
-	workItem1.CurrentStatus = CreateStatus(agreement.AgreementID, agreement.VersionID, "", "accepted", agreement.Version)
+	workItem1.AmountDue = 100
+	workItem1.AmountPaid = 100
 	agreement.WorkItems = append(agreement.WorkItems, workItem1)
 	if !agreement.WorkItems.AreCompleted() {
 		t.Error("incomplete workItems when workItems is completed")
 	}
 	workItem2 := new(WorkItem)
+	workItem2.AmountDue = 100
 	agreement.WorkItems = append(agreement.WorkItems, workItem2)
 	if agreement.WorkItems.AreCompleted() {
 		t.Error("completed workItems when workItems is incomplete")

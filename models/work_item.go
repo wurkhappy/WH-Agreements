@@ -10,18 +10,13 @@ import (
 type WorkItem struct {
 	//these are attributes that the service manages the data for
 	//eventually this stuff could be broken out into its own service but overkill right now
-	ID            string       `json:"id"`
-	Amount        int          `json:"amount"`
-	ScopeItems    []*ScopeItem `json:"scopeItems"`
-	Title         string       `json:"title"`
-	CurrentStatus *Status      `json:"currentStatus"`
-	DateExpected  time.Time    `json:"dateExpected"`
-	Required      bool         `json:"required"`
-	Completed     bool         `json:"completed"`
-
-	//we won't store this but we need this data to delegate to the Payment service
-	PaymentMethodID    string `json:"paymentMethodID"`
-	RecipientAccountID string `json:"recipientAccountID"`
+	ID           string       `json:"id"`
+	AmountDue    int          `json:"amount"`
+	ScopeItems   []*ScopeItem `json:"scopeItems"`
+	Title        string       `json:"title"`
+	DateExpected time.Time    `json:"dateExpected"`
+	Required     bool         `json:"required"`
+	AmountPaid   int          `json:"amountPaid"`
 }
 
 type ScopeItem struct {
@@ -52,7 +47,7 @@ func (w WorkItems) AreCompleted() bool {
 	numberOfWorkItems := len(w)
 	var numberOfPaidWorkItems int
 	for _, workItem := range w {
-		if workItem.CurrentStatus != nil && workItem.CurrentStatus.Action == "accepted" {
+		if workItem.AmountPaid == workItem.AmountDue {
 			numberOfPaidWorkItems += 1
 		}
 	}
