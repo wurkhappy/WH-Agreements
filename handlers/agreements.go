@@ -62,9 +62,13 @@ func FindUserArchivedAgreements(params map[string]interface{}, body []byte) ([]b
 
 func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
-
-	var reqData map[string]interface{}
+	fmt.Println(string(body))
+	var reqData struct {
+		ClientEmail string `json:"clientEmail"`
+	}
 	json.Unmarshal(body, &reqData)
+	var newAgreement *models.Agreement
+	json.Unmarshal(body, &newAgreement)
 
 	agreement, err := models.FindAgreementByVersionID(id)
 	if err != nil {
@@ -75,11 +79,14 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	}
 	json.Unmarshal(body, &agreement)
 
-	//get the client's info
-	if email, ok := reqData["clientEmail"]; ok {
-		clientData := getUserInfo(email.(string))
+	//we need to do this in case the order of the work items changes
+	agreement.WorkItems = newAgreement.WorkItems
+
+	if reqData.ClientEmail != "" {
+		clientData := getUserInfo(reqData.ClientEmail)
 		agreement.SetRecipient(clientData["id"].(string))
 	}
+
 	agreement.WorkItems.AddIDs()
 	err = agreement.Save()
 	if err != nil {
