@@ -11,7 +11,7 @@ type WorkItem struct {
 	//these are attributes that the service manages the data for
 	//eventually this stuff could be broken out into its own service but overkill right now
 	ID           string       `json:"id"`
-	AmountDue    int          `json:"amount"`
+	AmountDue    int          `json:"amountDue"`
 	ScopeItems   []*ScopeItem `json:"scopeItems"`
 	Title        string       `json:"title"`
 	DateExpected time.Time    `json:"dateExpected"`

@@ -62,7 +62,6 @@ func FindUserArchivedAgreements(params map[string]interface{}, body []byte) ([]b
 
 func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
-	fmt.Println(string(body))
 	var reqData struct {
 		ClientEmail string `json:"clientEmail"`
 	}

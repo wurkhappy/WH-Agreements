@@ -90,7 +90,6 @@ func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, i
 	data.Action = "submitted"
 
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
-	fmt.Println(status.ParentID)
 	status.UserID = data.UserID
 	payment.CurrentStatus = status
 
