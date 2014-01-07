@@ -81,6 +81,7 @@ func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, i
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 
+	fmt.Println(string(body))
 	payment := models.NewPayment()
 	json.Unmarshal(body, &payment)
 	agreement.Payments = append(agreement.Payments, payment)

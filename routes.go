@@ -35,6 +35,18 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
+			PathExp: "/agreement/v/:versionID/work_item/:workItemID/tasks",
+			Dest: map[string]interface{}{
+				"PUT": handlers.UpdateTasks,
+			},
+		},
+		urlrouter.Route{
+			PathExp: "/agreement/v/:versionID/work_item/:workItemID",
+			Dest: map[string]interface{}{
+				"PUT": handlers.UpdateWorkItem,
+			},
+		},
+		urlrouter.Route{
 			PathExp: "/agreement/v/:versionID/status",
 			Dest: map[string]interface{}{
 				"POST": handlers.CreateAgreementStatus,

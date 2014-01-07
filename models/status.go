@@ -19,7 +19,7 @@ type Status struct {
 	AgreementVersionID string    `json:"agreementVersionID"`
 	AgreementVersion   int       `json:"agreementVersion"`
 	ParentID           string    `json:"parentID"`
-	PaymentID          string    `json:"paymentID"`
+	PaymentID          string    `json:"paymentID,omitempty"`
 	Action             string    `json:"action"`
 	Date               time.Time `json:"date"`
 	UserID             string    `json:"userID"`
