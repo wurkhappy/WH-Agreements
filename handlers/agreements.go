@@ -165,3 +165,14 @@ func GetVersionOwner(params map[string]interface{}, body []byte) ([]byte, error,
 	jsonData, _ := json.Marshal(data)
 	return jsonData, nil, http.StatusOK
 }
+
+func GetLatestAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	id := params["id"].(string)
+	a, err := models.FindLatestAgreementByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
+
+	jsonData, _ := json.Marshal(a)
+	return jsonData, nil, http.StatusOK
+}
