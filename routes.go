@@ -17,15 +17,15 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
-			PathExp: "/agreements/:id",
-			Dest: map[string]interface{}{
-				"GET": handlers.GetLatestAgreement,
-			},
-		},
-		urlrouter.Route{
 			PathExp: "/agreements/v",
 			Dest: map[string]interface{}{
 				"POST": handlers.CreateAgreement,
+			},
+		},
+		urlrouter.Route{
+			PathExp: "/agreements/:id",
+			Dest: map[string]interface{}{
+				"GET": handlers.GetLatestAgreement,
 			},
 		},
 		urlrouter.Route{
