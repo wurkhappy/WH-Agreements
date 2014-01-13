@@ -207,7 +207,7 @@ func createNewTransaction(agreement *models.Agreement, payment *models.Payment, 
 	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
 	if err != nil {
 		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/transactions")
+		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
 	}
 	publisher.Publish(body, true)
 }
@@ -228,7 +228,7 @@ func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	if err != nil {
 		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/"+payment.ID+"/transaction")
+		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	}
 	publisher.Publish(body, true)
 }
