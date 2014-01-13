@@ -204,7 +204,11 @@ func createNewTransaction(agreement *models.Agreement, payment *models.Payment, 
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
+	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
+	if err != nil {
+		dialRMQ()
+		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/transactions")
+	}
 	publisher.Publish(body, true)
 }
 
@@ -221,7 +225,11 @@ func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, _ := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
+	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
+	if err != nil {
+		dialRMQ()
+		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/"+payment.ID+"/transaction")
+	}
 	publisher.Publish(body, true)
 }
 
