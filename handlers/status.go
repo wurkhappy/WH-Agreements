@@ -13,6 +13,7 @@ type StatusData struct {
 	Action          string           `json:"action"`
 	Message         string           `json:"message"`
 	UserID          string           `json:"userID"`
+	IPAddress       string           `json:"ipAddress"`
 	CreditSourceURI string           `json:"creditSourceURI"`
 	DebitSourceURI  string           `json:"debitSourceURI"`
 	PaymentType     string           `json:"paymentType"`
@@ -37,7 +38,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 
 	var data *StatusData
 	json.Unmarshal(body, &data)
-	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version, data.IPAddress)
 	status.UserID = data.UserID
 
 	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action {
@@ -90,7 +91,7 @@ func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, i
 	json.Unmarshal(body, &data)
 	data.Action = "submitted"
 
-	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version, data.IPAddress)
 	status.UserID = data.UserID
 	payment.CurrentStatus = status
 
@@ -142,7 +143,7 @@ func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	//create a status
 	var data *StatusData
 	json.Unmarshal(body, &data)
-	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version)
+	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version, data.IPAddress)
 	status.UserID = data.UserID
 	payment.CurrentStatus = status
 	agreement.CurrentStatus = status

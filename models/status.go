@@ -1,13 +1,10 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
-	// "labix.org/v2/mgo"
-	"encoding/json"
-	// "labix.org/v2/mgo/bson"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -23,9 +20,10 @@ type Status struct {
 	Action             string    `json:"action"`
 	Date               time.Time `json:"date"`
 	UserID             string    `json:"userID"`
+	IPAddress          string    `json:"ipAddress"`
 }
 
-func CreateStatus(agrmntID, versionID, parentID, action string, versionNumber int) *Status {
+func CreateStatus(agrmntID, versionID, parentID, action string, versionNumber int, ipAddress string) *Status {
 	id, _ := uuid.NewV4()
 	return &Status{
 		ID:                 id.String(),
@@ -35,6 +33,7 @@ func CreateStatus(agrmntID, versionID, parentID, action string, versionNumber in
 		ParentID:           parentID,
 		AgreementVersionID: versionID,
 		AgreementVersion:   versionNumber,
+		IPAddress:          ipAddress,
 	}
 }
 
@@ -66,23 +65,4 @@ func GetStatusHistory(agreementID string) (statuses []*Status, err error) {
 		statuses = append(statuses, st)
 	}
 	return statuses, nil
-}
-
-func (s *Status) MarshalJSON() ([]byte, error) {
-	var parentID string
-	if s.ParentID == "" {
-		s.ParentID = s.PaymentID
-	} else {
-		parentID = s.ParentID
-	}
-	jsonString := `{"id":"` + s.ID + `",
-	"agreementID":"` + s.AgreementID + `",
-	"agreementVersionID":"` + s.AgreementVersionID + `",
-	"agreementVersion":` + strconv.Itoa(s.AgreementVersion) + `,
-	"parentID":"` + parentID + `",
-	"action":"` + s.Action + `",
-	"date":` + s.Date.Format(`"`+time.RFC3339Nano+`"`) + `,
-	"userID":"` + s.UserID + `"}`
-
-	return []byte(jsonString), nil
 }
