@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/wurkhappy/WH-Agreements/models"
+	"html/template"
 	"net/http"
 )
 
@@ -16,6 +17,7 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	}
 	agreement.SetDraftCreatorID()
 	agreement.WorkItems.AddIDs()
+	agreement.ProposedServices = template.HTMLEscapeString(agreement.ProposedServices)
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
