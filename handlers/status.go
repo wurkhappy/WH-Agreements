@@ -14,8 +14,8 @@ type StatusData struct {
 	Message         string           `json:"message"`
 	UserID          string           `json:"userID"`
 	IPAddress       string           `json:"ipAddress"`
-	CreditSourceURI string           `json:"creditSourceURI"`
-	DebitSourceURI  string           `json:"debitSourceURI"`
+	CreditSourceURI string           `json:"creditSourceID"`
+	DebitSourceURI  string           `json:"debitSourceID"`
 	PaymentType     string           `json:"paymentType"`
 	WorkItems       models.WorkItems `json:"workItems"`
 }
@@ -191,12 +191,12 @@ func createNewTransaction(agreement *models.Agreement, payment *models.Payment, 
 	}
 
 	m := map[string]interface{}{
-		"creditSourceURI": creditURI,
-		"clientID":        agreement.ClientID,
-		"freelancerID":    agreement.FreelancerID,
-		"agreementID":     agreement.AgreementID,
-		"paymentID":       payment.ID,
-		"amount":          amount,
+		"creditSourceID": creditURI,
+		"clientID":       agreement.ClientID,
+		"freelancerID":   agreement.FreelancerID,
+		"agreementID":    agreement.AgreementID,
+		"paymentID":      payment.ID,
+		"amount":         amount,
 	}
 	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
@@ -216,8 +216,8 @@ func createNewTransaction(agreement *models.Agreement, payment *models.Payment, 
 func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 
 	m := map[string]interface{}{
-		"debitSourceURI": debitURI,
-		"paymentType":    paymentType,
+		"debitSourceID": debitURI,
+		"paymentType":   paymentType,
 	}
 	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
