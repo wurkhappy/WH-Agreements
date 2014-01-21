@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	// "time"
 )
 
@@ -35,6 +36,8 @@ func main() {
 	// Create a channel to talk with the OS
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
+	signal.Notify(sigChan, os.Kill)
+	signal.Notify(sigChan, syscall.SIGTERM)
 	// go func() {
 	// 	time.Sleep(10 * time.Second)
 	// 	sigChan <- true
