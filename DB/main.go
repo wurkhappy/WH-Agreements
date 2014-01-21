@@ -3,7 +3,7 @@ package DB
 import (
 	"database/sql"
 	_ "github.com/bmizerany/pq"
-	// "log"
+	"log"
 )
 
 var DB *sql.DB
@@ -24,4 +24,21 @@ func Connect(production bool) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func Close() {
+	log.Println("close db")
+	SaveAgreement.Close()
+	UpsertAgreement.Close()
+	FindAgreementByVersionID.Close()
+	FindLiveAgreementsByClientID.Close()
+	FindAgreementByUserID.Close()
+	FindAgreementByFreelancerID.Close()
+	FindArchivedByFreelancerID.Close()
+	FindArchivedByClientID.Close()
+	DeleteAgreement.Close()
+	FindLiveVersions.Close()
+	UpsertStatus.Close()
+	GetStatusHistory.Close()
+	DB.Close()
 }

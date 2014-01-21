@@ -3,12 +3,16 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/wurkhappy/WH-Agreements/handlers"
 	"github.com/wurkhappy/WH-Agreements/DB"
+	"github.com/wurkhappy/WH-Agreements/handlers"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
+	"log"
 	"net/url"
-	// "log"
+	"os"
+	"os/signal"
+	"sync"
+	// "time"
 )
 
 var production = flag.Bool("production", false, "Production settings")
@@ -21,18 +25,43 @@ func main() {
 		config.Test()
 	}
 	DB.Setup(*production)
+	defer DB.Close()
 	handlers.Setup()
 	router.Start()
 
 	gophers := 10
 
+	// Create a channel to talk with the OS
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	// go func() {
+	// 	time.Sleep(10 * time.Second)
+	// 	sigChan <- true
+	// }()
+
+	// Create a channel to shut down the program early
+	shutChan := make(chan bool)
+	var wg sync.WaitGroup
+
 	for i := 0; i < gophers; i++ {
 		worker := mdp.NewWorker(config.MDPBroker, config.AgreementsService, false)
 		defer worker.Close()
-		go route(worker)
+		go route(worker, shutChan, wg)
 	}
 
-	select {}
+	select {
+	case <-sigChan:
+		log.Println("Main", "controller.Run", "******> Program Being Killed")
+
+		// Signal the program to shutdown and wait for confirmation
+		for i := 0; i < gophers; i++ {
+			shutChan <- true
+		}
+	}
+	wg.Wait()
+
+	log.Println("Main", "controller.Run", "******> Shutting Down")
+	return
 }
 
 type Resp struct {
@@ -46,10 +75,13 @@ type ServiceReq struct {
 	Body   []byte
 }
 
-func route(worker mdp.Worker) {
+func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
+	wg.Add(1)
 	for reply := [][]byte{}; ; {
-		request := worker.Recv(reply)
+		request := worker.Recv(reply, shutChan)
 		if len(request) == 0 {
+			log.Print("wg done")
+			wg.Done()
 			break
 		}
 		var req *ServiceReq
@@ -86,5 +118,6 @@ func route(worker mdp.Worker) {
 		resp := &Resp{jsonData, statusCode}
 		d, _ := json.Marshal(resp)
 		reply = [][]byte{d}
+
 	}
 }
