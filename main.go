@@ -21,6 +21,7 @@ func main() {
 	flag.Parse()
 	if *production {
 		config.Prod()
+		log.SetOutput(os.Stdout)
 	} else {
 		config.Test()
 	}
