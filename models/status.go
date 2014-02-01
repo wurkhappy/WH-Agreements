@@ -39,7 +39,8 @@ func CreateStatus(agrmntID, versionID, parentID, action string, versionNumber in
 
 func (s *Status) Save() (err error) {
 	jsonByte, _ := json.Marshal(s)
-	_, err = DB.UpsertStatus.Query(s.ID, string(jsonByte))
+	r, err := DB.UpsertStatus.Query(s.ID, string(jsonByte))
+	r.Close()
 	if err != nil {
 		log.Print(err)
 		return err
