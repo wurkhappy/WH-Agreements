@@ -16,7 +16,7 @@ type Agreement struct {
 	FreelancerID        string        `json:"freelancerID"`
 	Title               string        `json:"title"`
 	ProposedServices    string        `json:"proposedServices"`
-	RefundPolicy        string        `json:"refundPolicy"`
+	PaymentSchedule     string        `json:"paymentSchedule"`
 	WorkItems           WorkItems     `json:"workItems,omitempty"`
 	Payments            Payments      `json:"payments"`
 	StatusHistory       statusHistory `json:"statusHistory"`
@@ -46,7 +46,8 @@ func (a *Agreement) Save() (err error) {
 	a.StatusHistory = nil
 
 	jsonByte, _ := json.Marshal(a)
-	_, err = DB.UpsertAgreement.Query(a.VersionID, string(jsonByte))
+	r, err := DB.UpsertAgreement.Query(a.VersionID, string(jsonByte))
+	r.Close()
 	if err != nil {
 		log.Print(err)
 		return err
