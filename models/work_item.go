@@ -11,12 +11,9 @@ type WorkItem struct {
 	//these are attributes that the service manages the data for
 	//eventually this stuff could be broken out into its own service but overkill right now
 	ID           string    `json:"id"`
-	AmountDue    int       `json:"amountDue"`
 	Tasks        []*Task   `json:"scopeItems"`
 	Title        string    `json:"title"`
 	DateExpected time.Time `json:"dateExpected"`
-	Required     bool      `json:"required"`
-	AmountPaid   int       `json:"amountPaid"`
 	Description  string    `json:"description"`
 }
 
@@ -41,13 +38,6 @@ func (w WorkItems) GetWorkItem(id string) *WorkItem {
 }
 
 func (w WorkItems) AreCompleted() bool {
-	numberOfWorkItems := len(w)
-	var numberOfPaidWorkItems int
-	for _, workItem := range w {
-		if workItem.AmountPaid == workItem.AmountDue {
-			numberOfPaidWorkItems += 1
-		}
-	}
 
-	return numberOfWorkItems == numberOfPaidWorkItems
+	return true
 }

@@ -2,7 +2,7 @@ package models
 
 type PaymentItem struct {
 	WorkItemID string `json:"workItemID"`
-	Amount     int    `json:"amount"`
+	TaskID     string `json:"taskID"`
 }
 
 type PaymentItems []*PaymentItem

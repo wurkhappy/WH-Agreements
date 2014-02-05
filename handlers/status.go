@@ -97,13 +97,7 @@ func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, i
 
 	go createNewTransaction(agreement, payment, data.CreditSourceURI)
 
-	for _, paymentItem := range payment.PaymentItems {
-		workItem := agreement.WorkItems.GetWorkItem(paymentItem.WorkItemID)
-		if workItem.Required {
-			payment.IncludesDeposit = true
-		}
-	}
-	if !payment.IncludesDeposit {
+	if !payment.IsDeposit {
 		agreement.CurrentStatus = status
 		go emailSubmittedPayment(agreement, payment, data.Message)
 	}
@@ -146,20 +140,20 @@ func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, payment.ID, data.Action, agreement.Version, data.IPAddress)
 	status.UserID = data.UserID
 	payment.CurrentStatus = status
+	oldStatus := agreement.CurrentStatus
 	agreement.CurrentStatus = status
 
 	//check what action the status is
 	switch status.Action {
 	case "submitted":
-		go createNewTransaction(agreement, payment, data.CreditSourceURI)
-		go emailSubmittedPayment(agreement, payment, data.Message)
-	case "accepted":
-		//if we are accepting a payment then let's update the work items to know if they are completed or not
-		for _, paymentItem := range payment.PaymentItems {
-			workItem := agreement.WorkItems.GetWorkItem(paymentItem.WorkItemID)
-			workItem.AmountPaid = paymentItem.Amount
+		if !payment.IsDeposit {
+			go emailSubmittedPayment(agreement, payment, data.Message)
+		} else {
+			agreement.CurrentStatus = oldStatus
 		}
-
+		go createNewTransaction(agreement, payment, data.CreditSourceURI)
+	case "accepted":
+		payment.AmountPaid = payment.AmountDue
 		go sendPayment(payment, data.DebitSourceURI, data.PaymentType)
 		go emailSentPayment(agreement, payment, data.Message)
 		go emailAcceptedPayment(agreement, payment, data.Message)
@@ -185,18 +179,13 @@ func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 }
 
 func createNewTransaction(agreement *models.Agreement, payment *models.Payment, creditURI string) {
-	var amount int
-	for _, paymentItem := range payment.PaymentItems {
-		amount += paymentItem.Amount
-	}
-
 	m := map[string]interface{}{
 		"creditSourceID": creditURI,
 		"clientID":       agreement.ClientID,
 		"freelancerID":   agreement.FreelancerID,
 		"agreementID":    agreement.AgreementID,
 		"paymentID":      payment.ID,
-		"amount":         amount,
+		"amount":         payment.AmountDue,
 	}
 	bodyJSON, _ := json.Marshal(m)
 	message := map[string]interface{}{
