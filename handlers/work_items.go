@@ -16,13 +16,13 @@ func UpdateWorkItem(params map[string]interface{}, body []byte) ([]byte, error, 
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 
-	workItem := agreement.WorkItems.GetWorkItem(workItemID)
+	workItem := agreement.WorkItems.GetByID(workItemID)
 
 	var wi *models.WorkItem
 	json.Unmarshal(body, &wi)
-	//only allow description to be updated directly.
-	//anything else requires an agreement change
 	workItem.Description = wi.Description
+	workItem.Tasks = wi.Tasks
+	workItem.Completed = wi.Tasks.AreComplete()
 
 	err = agreement.Save()
 	if err != nil {

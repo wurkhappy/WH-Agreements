@@ -42,6 +42,14 @@ func (p Payments) GetPayment(id string) *Payment {
 	return nil
 }
 
+func (p *Payment) UpdateAmountDue() {
+	var amount float64
+	for _, item := range p.PaymentItems {
+		amount += item.AmountDue
+	}
+	p.AmountDue = amount
+}
+
 func (p *Payment) MarshalJSON() ([]byte, error) {
 	if p.ID == "" {
 		id, _ := uuid.NewV4()

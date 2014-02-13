@@ -35,6 +35,12 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
+			PathExp: "/agreement/v/:versionID/payment/:paymentID",
+			Dest: map[string]interface{}{
+				"PUT": handlers.UpdatePayment,
+			},
+		},
+		urlrouter.Route{
 			PathExp: "/agreement/v/:versionID/payment/",
 			Dest: map[string]interface{}{
 				"POST": handlers.CreatePayment,

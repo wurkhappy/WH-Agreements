@@ -12,7 +12,7 @@ func test_CreateStatus(t *testing.T) {
 	paymentID, _ := uuid.NewV4()
 	action := "submitted"
 	versionNumber := 1
-	status := CreateStatus(agreementID.String(), versionID.String(), paymentID.String(), action, versionNumber)
+	status := CreateStatus(agreementID.String(), versionID.String(), paymentID.String(), action, versionNumber, "ipaddress")
 	if status.AgreementID != agreementID.String() {
 		t.Error("wrong agreement ID returned")
 	}
@@ -38,7 +38,7 @@ func test_CreateStatus(t *testing.T) {
 
 func test_SaveStatus(t *testing.T) {
 	agreement := NewAgreement()
-	status := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version)
+	status := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version, "ipaddress")
 	err := status.Save()
 	if err != nil {
 		t.Errorf("error saving status: %s", err)
@@ -47,9 +47,9 @@ func test_SaveStatus(t *testing.T) {
 
 func test_GetStatusHistory(t *testing.T) {
 	agreement := NewAgreement()
-	status1 := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version)
+	status1 := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version, "ipaddress")
 	status1.Save()
-	status2 := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version)
+	status2 := CreateStatus(agreement.AgreementID, agreement.VersionID, "", "submitted", agreement.Version, "ipaddress")
 	status2.Save()
 
 	statusHistory, err := GetStatusHistory(agreement.AgreementID)

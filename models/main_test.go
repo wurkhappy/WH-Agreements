@@ -15,9 +15,9 @@ func init() {
 func TestUnitTests(t *testing.T) {
 	test_NewAgreement(t)
 	test_CreateStatus(t)
-	test_WorkItemsAreCompleted(t)
 	test_SetDraftCreatorID(t)
 	test_SetRecipient(t)
+	test_UpdatePaidItems(t)
 
 	//payment tests
 	test_AddIDs(t)

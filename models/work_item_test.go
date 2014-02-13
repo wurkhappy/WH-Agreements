@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/nu7hatch/gouuid"
 	"testing"
 	// "time"
@@ -33,19 +34,43 @@ func test_GetWorkItem(t *testing.T) {
 	}
 }
 
-func test_WorkItemsAreCompleted(t *testing.T) {
-	agreement := NewAgreement()
-	workItem1 := new(WorkItem)
-	workItem1.AmountDue = 100
-	workItem1.AmountPaid = 100
-	agreement.WorkItems = append(agreement.WorkItems, workItem1)
-	if !agreement.WorkItems.AreCompleted() {
-		t.Error("incomplete workItems when workItems is completed")
+func test_UpdatePaidItems(t *testing.T) {
+	workItemsJSON := `[
+	{"id":"1", "scopeItems":[{"id":"1"},{"id":"2"}]},
+	{"id":"2", "scopeItems":[{"id":"1"},{"id":"2"}]},
+	{"id":"3", "scopeItems":[{"id":"1"},{"id":"2"}]}
+	]`
+	paymentItemsJSON := `[
+	{"workItemID":"1", "taskID":"1"},
+	{"workItemID":"1", "taskID":"2"},
+	{"workItemID":"2"},
+	{"workItemID":"3", "taskID":"1"}
+	]`
+	var workItems WorkItems
+	json.Unmarshal([]byte(workItemsJSON), &workItems)
+	var paymentItems PaymentItems
+	json.Unmarshal([]byte(paymentItemsJSON), &paymentItems)
+
+	workItems.UpdatePaidItems(paymentItems)
+	w1 := workItems.GetWorkItem("1")
+	if !w1.IsPaid {
+		t.Error("work items are not being marked paid")
 	}
-	workItem2 := new(WorkItem)
-	workItem2.AmountDue = 100
-	agreement.WorkItems = append(agreement.WorkItems, workItem2)
-	if agreement.WorkItems.AreCompleted() {
-		t.Error("completed workItems when workItems is incomplete")
+	if !w1.Tasks[0].IsPaid {
+		t.Error("tasks are not being marked paid")
+	}
+	w2 := workItems.GetWorkItem("2")
+	if !w2.IsPaid {
+		t.Error("work items are not being marked paid")
+	}
+	if !w2.Tasks[0].IsPaid {
+		t.Error("tasks are not being marked paid")
+	}
+	w3 := workItems.GetWorkItem("3")
+	if w3.IsPaid {
+		t.Error("work items are incorrectly being marked paid")
+	}
+	if !w2.Tasks[0].IsPaid {
+		t.Error("tasks are not being marked paid")
 	}
 }
