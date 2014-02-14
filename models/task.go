@@ -7,26 +7,26 @@ import (
 )
 
 type Task struct {
-	ID             string    `json:"id"`
-	Completed      bool      `json:"completed"`
-	IsPaid         bool      `json:"isPaid"`
-	HoursCompleted int       `json:"hoursCompleted"`
-	Tasks          Tasks     `json:"scopeItems"`
-	Title          string    `json:"title"`
-	DateExpected   time.Time `json:"dateExpected"`
-	Description    string    `json:"description"`
+	ID           string    `json:"id"`
+	Completed    bool      `json:"completed"`
+	IsPaid       bool      `json:"isPaid"`
+	Hours        float64   `json:"hours"`
+	Tasks        Tasks     `json:"scopeItems"`
+	Title        string    `json:"title"`
+	DateExpected time.Time `json:"dateExpected"`
+	Description  string    `json:"description"`
 }
 
 //for unmarshaling purposes
 type task struct {
-	ID             string    `json:"id"`
-	Completed      bool      `json:"completed"`
-	IsPaid         bool      `json:"isPaid"`
-	HoursCompleted int       `json:"hoursCompleted"`
-	Tasks          Tasks     `json:"scopeItems"`
-	Title          string    `json:"title"`
-	DateExpected   time.Time `json:"dateExpected"`
-	Description    string    `json:"description"`
+	ID           string    `json:"id"`
+	Completed    bool      `json:"completed"`
+	IsPaid       bool      `json:"isPaid"`
+	Hours        float64   `json:"hours"`
+	Tasks        Tasks     `json:"scopeItems"`
+	Title        string    `json:"title"`
+	DateExpected time.Time `json:"dateExpected"`
+	Description  string    `json:"description"`
 }
 
 type Tasks []*Task
@@ -46,7 +46,7 @@ func (t *Task) UnmarshalJSON(bytes []byte) (err error) {
 	t.ID = tk.ID
 	t.Completed = tk.Completed
 	t.IsPaid = tk.IsPaid
-	t.HoursCompleted = tk.HoursCompleted
+	t.Hours = tk.Hours
 	t.Tasks = tk.Tasks
 	t.Title = tk.Title
 	t.DateExpected = tk.DateExpected
@@ -97,4 +97,40 @@ func (ts Tasks) AddIDs() {
 
 func (ts Tasks) AreCompleted() bool {
 	return true
+}
+
+func (t *Task) SubTasksArePaid() bool {
+	return t.Tasks.ArePaid()
+}
+
+func (tasks Tasks) UpdatePaidItems(payItems PaymentItems) {
+	cachedWorkItems := make(map[string]*Task)
+	for _, p := range payItems {
+		var t *Task
+		var ok bool
+		//this is an optimization so that we don't have to cycle through all the work items every single time
+		if t, ok = cachedWorkItems[p.WorkItemID]; !ok {
+			t = tasks.GetByID(p.WorkItemID)
+			cachedWorkItems[p.WorkItemID] = t
+		}
+
+		//if the payment item doesn't have a task ID then this payment is for a work item
+		if p.TaskID == "" {
+			t.IsPaid = true
+			t.Completed = true
+			t.Tasks.SetPaid()
+			t.Hours = p.Hours
+		} else {
+			task := t.Tasks.GetByID(p.TaskID)
+			task.Completed = true
+			task.IsPaid = true
+			task.Hours = p.Hours
+		}
+	}
+	for _, w := range tasks {
+		if w.SubTasksArePaid() {
+			w.IsPaid = true
+			w.Completed = true
+		}
+	}
 }

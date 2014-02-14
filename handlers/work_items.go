@@ -16,7 +16,7 @@ func UpdateWorkItem(params map[string]interface{}, body []byte) ([]byte, error, 
 		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
 	}
 
-	workItem := agreement.WorkItems.GetByID(workItemID)
+	workItem := agreement.Tasks.GetByID(workItemID)
 
 	var wi *models.WorkItem
 	json.Unmarshal(body, &wi)

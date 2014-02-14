@@ -154,7 +154,7 @@ func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, er
 		go createNewTransaction(agreement, payment, data.CreditSourceURI)
 	case "accepted":
 		payment.AmountPaid = payment.AmountDue
-		// agreement.WorkItems.UpdatePaidItems(payment.PaymentItems)
+		agreement.Tasks.UpdatePaidItems(payment.PaymentItems)
 		go sendPayment(payment, data.DebitSourceURI, data.PaymentType)
 		go emailSentPayment(agreement, payment, data.Message)
 		go emailAcceptedPayment(agreement, payment, data.Message)

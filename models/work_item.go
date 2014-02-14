@@ -10,14 +10,15 @@ import (
 type WorkItem struct {
 	//these are attributes that the service manages the data for
 	//eventually this stuff could be broken out into its own service but overkill right now
-	ID             string    `json:"id"`
-	Tasks          Tasks     `json:"scopeItems"`
-	Title          string    `json:"title"`
-	DateExpected   time.Time `json:"dateExpected"`
-	Description    string    `json:"description"`
-	IsPaid         bool      `json:"isPaid"`
-	Completed      bool      `json:"completed"`
-	HoursCompleted int       `json:"hoursCompleted"`
+	ID           string    `json:"id"`
+	Tasks        Tasks     `json:"scopeItems"`
+	Title        string    `json:"title"`
+	DateExpected time.Time `json:"dateExpected"`
+	Description  string    `json:"description"`
+	IsPaid       bool      `json:"isPaid"`
+	Completed    bool      `json:"completed"`
+	Hours        float64   `json:"hours"`
+	Rate         float64   `json:"rate"`
 }
 
 type WorkItems []*WorkItem
@@ -46,32 +47,35 @@ func (w WorkItems) AreCompleted() bool {
 }
 
 func (workItems WorkItems) UpdatePaidItems(payItems PaymentItems) {
-	// cachedWorkItems := make(map[string]*WorkItem)
-	// for _, p := range payItems {
-	// 	var w *WorkItem
-	// 	var ok bool
-	// 	if w, ok = cachedWorkItems[p.WorkItemID]; !ok {
-	// 		w = workItems.GetWorkItem(p.WorkItemID)
-	// 		cachedWorkItems[p.WorkItemID] = w
-	// 	}
-	// 	if p.TaskID != "" {
-	// 		task := w.Tasks.GetByID(p.TaskID)
-	// 		task.Completed = true
-	// 		task.IsPaid = true
-	// 		task.HoursCompleted = p.HoursCompleted
-	// 	} else {
-	// 		w.IsPaid = true
-	// 		w.Completed = true
-	// 		w.Tasks.SetPaid()
-	// 		w.HoursCompleted = p.HoursCompleted
-	// 	}
-	// }
-	// for _, w := range workItems {
-	// 	if w.TaskArePaid() {
-	// 		w.IsPaid = true
-	// 		w.Completed = true
-	// 	}
-	// }
+	cachedWorkItems := make(map[string]*WorkItem)
+	for _, p := range payItems {
+		var w *WorkItem
+		var ok bool
+		//this is an optimization so that we don't have to cycle through all the work items every single time
+		if w, ok = cachedWorkItems[p.WorkItemID]; !ok {
+			w = workItems.GetWorkItem(p.WorkItemID)
+			cachedWorkItems[p.WorkItemID] = w
+		}
+
+		//if the payment item doesn't have a task ID then this payment is for a work item
+		if p.TaskID == "" {
+			w.IsPaid = true
+			w.Completed = true
+			w.Tasks.SetPaid()
+			w.Hours = p.Hours
+		} else {
+			task := w.Tasks.GetByID(p.TaskID)
+			task.Completed = true
+			task.IsPaid = true
+			task.Hours = p.Hours
+		}
+	}
+	for _, w := range workItems {
+		if w.TaskArePaid() {
+			w.IsPaid = true
+			w.Completed = true
+		}
+	}
 }
 
 func (w *WorkItem) TaskArePaid() bool {

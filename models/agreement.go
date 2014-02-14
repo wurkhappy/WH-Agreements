@@ -17,7 +17,7 @@ type Agreement struct {
 	Title               string        `json:"title"`
 	ProposedServices    string        `json:"proposedServices"`
 	PaymentSchedule     string        `json:"paymentSchedule"`
-	WorkItems           Tasks         `json:"workItems,omitempty"`
+	Tasks               Tasks         `json:"workItems,omitempty"`
 	Payments            Payments      `json:"payments"`
 	StatusHistory       statusHistory `json:"statusHistory"`
 	LastModified        time.Time     `json:"lastModified"`

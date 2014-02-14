@@ -19,7 +19,7 @@ func UpdateTasks(params map[string]interface{}, body []byte) ([]byte, error, int
 	// 	return nil, fmt.Errorf("%s", "Updating not allowed"), http.StatusBadRequest
 	// }
 
-	workItem := agreement.WorkItems.GetByID(workItemID)
+	workItem := agreement.Tasks.GetByID(workItemID)
 
 	var tasks []*models.Task
 	json.Unmarshal(body, &tasks)

@@ -18,10 +18,6 @@ type Payment struct {
 	IsDeposit     bool         `json:"isDeposit"`
 	AmountDue     float64      `json:"amountDue"`
 	AmountPaid    float64      `json:"amountPaid"`
-
-	// //we won't store this but we need this data to delegate to the Payment service
-	// PaymentMethodID    string `json:"paymentMethodID"`
-	// RecipientAccountID string `json:"recipientAccountID"`
 }
 
 type Payments []*Payment

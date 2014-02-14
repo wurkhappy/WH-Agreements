@@ -15,7 +15,6 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 		return nil, fmt.Errorf("%s", "Wrong value types"), http.StatusBadRequest
 	}
 	agreement.SetDraftCreatorID()
-	agreement.WorkItems.AddIDs()
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
@@ -78,15 +77,14 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 	}
 	json.Unmarshal(body, &agreement)
 
-	//we need to do this in case the order of the work items changes
-	agreement.WorkItems = newAgreement.WorkItems
+	//we need to do this in case the order of the tasks changes
+	agreement.Tasks = newAgreement.Tasks
 
 	if reqData.ClientEmail != "" {
 		clientData := getUserInfo(reqData.ClientEmail)
 		agreement.SetRecipient(clientData["id"].(string))
 	}
 
-	agreement.WorkItems.AddIDs()
 	err = agreement.Save()
 	if err != nil {
 		return nil, fmt.Errorf("%s %s", "Error saving: ", err.Error()), http.StatusBadRequest
@@ -116,7 +114,7 @@ func ArchiveAgreement(params map[string]interface{}, body []byte) ([]byte, error
 	}
 
 	//if there are payments outstanding and the user is archiving then send an email to the other user
-	if agreement.WorkItems.AreCompleted() {
+	if agreement.Tasks.AreCompleted() {
 		go emailArchivedAgreement(agreement)
 	}
 
