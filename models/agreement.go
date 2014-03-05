@@ -1,7 +1,9 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
+	_ "github.com/bmizerany/pq"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"log"
@@ -57,7 +59,7 @@ func (a *Agreement) Save() (err error) {
 
 func FindLatestAgreementByID(id string) (a *Agreement, err error) {
 	var s string
-	//query sorts by DESC and we get the first row so we get the latest
+	//query sorts by descending and we get the first row so we get the latest
 	err = DB.FindLiveVersions.QueryRow(id).Scan(&s)
 	if err != nil {
 		return nil, err
@@ -76,104 +78,49 @@ func FindAgreementByVersionID(id string) (a *Agreement, err error) {
 	return a, nil
 }
 
-func FindLiveAgreementsByClientID(id string) (agrmnts []*Agreement, err error) {
+func FindLiveAgreementsByClientID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindLiveAgreementsByClientID.Query(id)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return nil, err
-		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agrmnts = append(agrmnts, a)
-	}
-	return agrmnts, nil
+	return dbRowsToAgreements(r)
 }
 
-func FindAgreementByFreelancerID(id string) (agrmnts []*Agreement, err error) {
+func FindAgreementByFreelancerID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindAgreementByFreelancerID.Query(id)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return nil, err
-		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agrmnts = append(agrmnts, a)
-	}
-	return agrmnts, nil
+	return dbRowsToAgreements(r)
 }
 
-func FindAgreementByUserID(id string) (agrmnts []*Agreement, err error) {
+func FindAgreementByUserID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindAgreementByUserID.Query(id)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return nil, err
-		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agrmnts = append(agrmnts, a)
-	}
-	return agrmnts, nil
+	return dbRowsToAgreements(r)
 }
 
-func FindArchivedByFreelancerID(id string) (agrmnts []*Agreement, err error) {
+func FindArchivedByFreelancerID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindArchivedByFreelancerID.Query(id)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return nil, err
-		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agrmnts = append(agrmnts, a)
-	}
-	return agrmnts, nil
+	return dbRowsToAgreements(r)
 }
 
-func FindArchivedByClientID(id string) (agrmnts []*Agreement, err error) {
+func FindArchivedByClientID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindArchivedByClientID.Query(id)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return nil, err
-		}
-		var a *Agreement
-		json.Unmarshal([]byte(s), &a)
-		agrmnts = append(agrmnts, a)
-	}
-	return agrmnts, nil
+	return dbRowsToAgreements(r)
 }
 
 func DeleteAgreementWithVersionID(id string) (err error) {
@@ -200,15 +147,9 @@ func (agreement *Agreement) ArchiveOtherVersions() error {
 	}
 	defer r.Close()
 
-	for r.Next() {
-		var s string
-		err = r.Scan(&s)
-		if err != nil {
-			return err
-		}
-		var agr *Agreement
-		json.Unmarshal([]byte(s), &agr)
-		agreements = append(agreements, agr)
+	agreements, err = dbRowsToAgreements(r)
+	if err != nil {
+		return err
 	}
 
 	for _, ag := range agreements {
@@ -238,4 +179,18 @@ func (a *Agreement) SetRecipient(id string) {
 func (a *Agreement) SetAsCompleted() {
 	a.Archived = true
 	a.Final = true
+}
+
+func dbRowsToAgreements(r *sql.Rows) (agreements []*Agreement, err error) {
+	for r.Next() {
+		var s string
+		err = r.Scan(&s)
+		if err != nil {
+			return nil, err
+		}
+		var a *Agreement
+		json.Unmarshal([]byte(s), &a)
+		agreements = append(agreements, a)
+	}
+	return agreements, nil
 }

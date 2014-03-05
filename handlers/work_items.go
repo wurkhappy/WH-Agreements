@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func UpdateWorkItem(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func UpdateWorkItem(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	versionID := params["versionID"].(string)
 	workItemID := params["workItemID"].(string)
 

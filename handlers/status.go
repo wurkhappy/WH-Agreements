@@ -29,7 +29,7 @@ type Comment struct {
 	StatusID           string `json:"statusID"`
 }
 
-func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func CreateAgreementStatus(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	versionID := params["versionID"].(string)
 	agreement, err := models.FindAgreementByVersionID(versionID)
 	if err != nil {
@@ -41,7 +41,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	status := models.CreateStatus(agreement.AgreementID, agreement.VersionID, "", data.Action, agreement.Version, data.IPAddress)
 	status.UserID = data.UserID
 
-	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action {
+	if agreement.CurrentStatus != nil && status.Action == agreement.CurrentStatus.Action && status.ParentID == agreement.CurrentStatus.ParentID {
 		return nil, fmt.Errorf("%s", "Action already taken"), http.StatusConflict
 	}
 	agreement.CurrentStatus = status
@@ -75,7 +75,7 @@ func CreateAgreementStatus(params map[string]interface{}, body []byte) ([]byte, 
 	return s, nil, http.StatusOK
 }
 
-func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func CreatePayment(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	versionID := params["versionID"].(string)
 	agreement, err := models.FindAgreementByVersionID(versionID)
 	if err != nil {
@@ -116,7 +116,7 @@ func CreatePayment(params map[string]interface{}, body []byte) ([]byte, error, i
 	return p, nil, http.StatusOK
 }
 
-func UpdatePaymentStatus(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func UpdatePaymentStatus(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	//get the agreeement
 	versionID := params["versionID"].(string)
 	agreement, err := models.FindAgreementByVersionID(versionID)
@@ -195,10 +195,10 @@ func createNewTransaction(agreement *models.Agreement, payment *models.Payment, 
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
+	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "topic", config.TransactionsQueue, "/transactions")
 	if err != nil {
 		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/transactions")
+		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "topic", config.TransactionsQueue, "/transactions")
 	}
 	publisher.Publish(body, true)
 }
@@ -216,10 +216,10 @@ func sendPayment(payment *models.Payment, debitURI string, paymentType string) {
 	}
 
 	body, _ := json.Marshal(message)
-	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
+	publisher, err := rbtmq.NewPublisher(connection, config.TransactionsExchange, "topic", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	if err != nil {
 		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "direct", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
+		publisher, _ = rbtmq.NewPublisher(connection, config.TransactionsExchange, "topic", config.TransactionsQueue, "/payment/"+payment.ID+"/transaction")
 	}
 	publisher.Publish(body, true)
 }
@@ -230,6 +230,6 @@ func createComment(agreement *models.Agreement, payment *models.Payment, message
 		comment := &Comment{AgreementVersionID: agreement.VersionID, Text: message, UserID: userID, AgreementID: agreement.AgreementID}
 		commentBytes, _ := json.Marshal(comment)
 
-		sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes)
+		sendServiceRequest("POST", config.CommentsService, "/agreement/"+agreement.AgreementID+"/comments?sendEmail=false", commentBytes, userID)
 	}
 }

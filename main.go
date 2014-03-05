@@ -26,7 +26,7 @@ func main() {
 	} else {
 		config.Test()
 	}
-	DB.Setup(*production)
+	DB.Setup(true)
 	defer DB.Close()
 	handlers.Setup()
 	router.Start()
@@ -90,6 +90,11 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		}
 		var req *ServiceReq
 		json.Unmarshal(request[0], &req)
+		var userID string
+		if len(request) > 1 {
+			userID = string(request[1])
+		}
+		log.Println(userID, req.Path, req.Method)
 
 		//route to function based on the path and method
 		route, pathParams, err := router.FindRoute(req.Path)
@@ -97,7 +102,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 			return
 		}
 		routeMap := route.Dest.(map[string]interface{})
-		handler := routeMap[req.Method].(func(map[string]interface{}, []byte) ([]byte, error, int))
+		handler := routeMap[req.Method].(func(map[string]interface{}, []byte, string) ([]byte, error, int))
 
 		//add url params to params var
 		params := make(map[string]interface{})
@@ -112,7 +117,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		}
 
 		//run handler and do standard http stuff(write JSON, return err, set status code)
-		jsonData, err, statusCode := handler(params, req.Body)
+		jsonData, err, statusCode := handler(params, req.Body, userID)
 		if err != nil {
 			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
 			d, _ := json.Marshal(resp)

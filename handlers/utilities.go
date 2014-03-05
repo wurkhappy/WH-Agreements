@@ -15,13 +15,6 @@ func parseRequest(req *http.Request) []byte {
 	return buf.Bytes()
 }
 
-func getUserInfo(email string) map[string]interface{} {
-	resp, _ := sendServiceRequest("GET", config.UserService, "/user/search?create=true&email="+email, nil)
-	var clientData []map[string]interface{}
-	json.Unmarshal(resp, &clientData)
-	return clientData[0]
-}
-
 func sendRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
 	bodyReader := bytes.NewReader(body)
 	r, _ := http.NewRequest(method, service+path, bodyReader)
@@ -41,7 +34,7 @@ type ServiceResp struct {
 	Body       []byte  `json:"body"`
 }
 
-func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
+func sendServiceRequest(method, service, path string, body []byte, userID string) (response []byte, statusCode int) {
 	client := mdp.NewClient(config.MDPBroker, false)
 	defer client.Close()
 	m := map[string]interface{}{
@@ -50,7 +43,7 @@ func sendServiceRequest(method, service, path string, body []byte) (response []b
 		"Body":   body,
 	}
 	req, _ := json.Marshal(m)
-	request := [][]byte{req}
+	request := [][]byte{req, []byte(userID)}
 	reply := client.Send([]byte(service), request)
 	if len(reply) == 0 {
 		return nil, 404
