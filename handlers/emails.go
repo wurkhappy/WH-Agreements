@@ -1,15 +1,10 @@
 package handlers
 
 import (
-	// "bytes"
 	"encoding/json"
-	// "fmt"
-	// "github.com/gorilla/mux"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Agreements/models"
 	"github.com/wurkhappy/WH-Config"
-	// "log"
-	// "net/http"
 )
 
 func emailSubmittedAgreement(agreement *models.Agreement, message string) {
@@ -30,12 +25,7 @@ func emailNewAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/submitted")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/submitted")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/agreement/submitted", body)
 }
 
 func emailAcceptedAgreement(agreement *models.Agreement, message string) {
@@ -47,12 +37,7 @@ func emailAcceptedAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/accepted")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/accepted")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/agreement/accepted", body)
 }
 
 func emailRejectedAgreement(agreement *models.Agreement, message string) {
@@ -65,12 +50,7 @@ func emailRejectedAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/rejected")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/rejected")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/agreement/rejected", body)
 }
 
 func emailChangedAgreement(agreement *models.Agreement, message string) {
@@ -83,12 +63,7 @@ func emailChangedAgreement(agreement *models.Agreement, message string) {
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/updated")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/agreement/updated")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/agreement/updated", body)
 }
 
 func emailSubmittedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
@@ -102,12 +77,8 @@ func emailSubmittedPayment(agreement *models.Agreement, payment *models.Payment,
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/submitted")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/submitted")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/payment/submitted", body)
+
 }
 
 func emailSentPayment(agreement *models.Agreement, payment *models.Payment, message string) {
@@ -121,12 +92,8 @@ func emailSentPayment(agreement *models.Agreement, payment *models.Payment, mess
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/sent")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/sent")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/payment/sent", body)
+
 }
 
 func emailRejectedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
@@ -140,12 +107,7 @@ func emailRejectedPayment(agreement *models.Agreement, payment *models.Payment, 
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/rejected")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/rejected")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/payment/rejected", body)
 }
 
 func emailAcceptedPayment(agreement *models.Agreement, payment *models.Payment, message string) {
@@ -159,14 +121,18 @@ func emailAcceptedPayment(agreement *models.Agreement, payment *models.Payment, 
 	}
 
 	body, _ := json.Marshal(payload)
-	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/accepted")
-	if err != nil {
-		dialRMQ()
-		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "direct", config.EmailQueue, "/payment/accepted")
-	}
-	publisher.Publish(body, true)
+	sendEmail("/payment/accepted", body)
 }
 
 func emailArchivedAgreement(a *models.Agreement) {
 	//TODO:Fill in functionality
+}
+
+func sendEmail(path string, body []byte) {
+	publisher, err := rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
+	if err != nil {
+		dialRMQ()
+		publisher, _ = rbtmq.NewPublisher(connection, config.EmailExchange, "topic", config.EmailQueue, path)
+	}
+	publisher.Publish(body, true)
 }
