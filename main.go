@@ -26,7 +26,7 @@ func main() {
 	} else {
 		config.Test()
 	}
-	DB.Setup(true)
+	DB.Setup(*production)
 	defer DB.Close()
 	handlers.Setup()
 	router.Start()
