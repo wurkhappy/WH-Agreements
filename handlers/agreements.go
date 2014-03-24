@@ -79,6 +79,7 @@ func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 
 	//we need to do this in case the order of the tasks changes
 	agreement.Tasks = newAgreement.Tasks
+	agreement.Payments = newAgreement.Payments
 
 	if reqData.ClientEmail != "" {
 		clientData := getUserInfo(reqData.ClientEmail)
