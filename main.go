@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/handlers"
 	"github.com/wurkhappy/WH-Config"
@@ -94,7 +95,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		if len(request) > 1 {
 			userID = string(request[1])
 		}
-		log.Println(userID, req.Path, req.Method)
+		fmt.Println(userID, req.Path, req.Method, req.Body)
 
 		//route to function based on the path and method
 		route, pathParams, err := router.FindRoute(req.Path)
@@ -119,6 +120,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		//run handler and do standard http stuff(write JSON, return err, set status code)
 		jsonData, err, statusCode := handler(params, req.Body, userID)
 		if err != nil {
+			fmt.Println(userID, req.Path, req.Method, req.Body, err.Error())
 			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
 			d, _ := json.Marshal(resp)
 			reply = [][]byte{d}
