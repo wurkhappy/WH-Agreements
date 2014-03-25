@@ -120,7 +120,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		//run handler and do standard http stuff(write JSON, return err, set status code)
 		jsonData, err, statusCode := handler(params, req.Body, userID)
 		if err != nil {
-			fmt.Println(userID, req.Path, req.Method, req.Body, err.Error())
+			fmt.Println(userID, req.Path, req.Method, req.Body, "ERROR", err.Error())
 			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
 			d, _ := json.Marshal(resp)
 			reply = [][]byte{d}
