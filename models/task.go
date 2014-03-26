@@ -108,6 +108,9 @@ func (tasks Tasks) UpdatePaidItems(payItems PaymentItems) {
 	for _, p := range payItems {
 		var t *Task
 		var ok bool
+		if p.TaskID == "" && p.WorkItemID == "" {
+			continue
+		}
 		//this is an optimization so that we don't have to cycle through all the work items every single time
 		if t, ok = cachedWorkItems[p.WorkItemID]; !ok {
 			t = tasks.GetByID(p.WorkItemID)

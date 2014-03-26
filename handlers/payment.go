@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func UpdatePayment(params map[string]interface{}, body []byte) ([]byte, error, int) {
+func UpdatePayment(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	versionID := params["versionID"].(string)
 	paymentID := params["paymentID"].(string)
 	agreement, err := models.FindAgreementByVersionID(versionID)

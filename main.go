@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"github.com/wurkhappy/WH-Agreements/DB"
 	"github.com/wurkhappy/WH-Agreements/handlers"
 	"github.com/wurkhappy/WH-Config"
@@ -95,15 +94,20 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		if len(request) > 1 {
 			userID = string(request[1])
 		}
-		fmt.Println(userID, req.Path, req.Method, req.Body)
+
+		var bodyString string
+		if len(req.Body) > 0 {
+			bodyString = string(req.Body)
+		}
+		log.Println(userID, req.Path, req.Method, bodyString)
 
 		//route to function based on the path and method
 		route, pathParams, err := router.FindRoute(req.Path)
 		if route == nil || err != nil {
 			return
 		}
-		routeMap := route.Dest.(map[string]interface{})
-		handler := routeMap[req.Method].(func(map[string]interface{}, []byte, string) ([]byte, error, int))
+		routeMap := route.Dest.(map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int))
+		handler := routeMap[req.Method]
 
 		//add url params to params var
 		params := make(map[string]interface{})
@@ -120,7 +124,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 		//run handler and do standard http stuff(write JSON, return err, set status code)
 		jsonData, err, statusCode := handler(params, req.Body, userID)
 		if err != nil {
-			fmt.Println(userID, req.Path, req.Method, req.Body, "ERROR", err.Error())
+			log.Println(userID, req.Path, req.Method, bodyString, "ERROR", err.Error())
 			resp := &Resp{[]byte(`{"description":"` + err.Error() + `"}`), statusCode}
 			d, _ := json.Marshal(resp)
 			reply = [][]byte{d}
