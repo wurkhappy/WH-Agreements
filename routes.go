@@ -17,6 +17,12 @@ var router urlrouter.Router = urlrouter.Router{
 			},
 		},
 		urlrouter.Route{
+			PathExp: "/agreements/v/:id/action",
+			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
+				"POST": handlers.UpdateAction,
+			},
+		},
+		urlrouter.Route{
 			PathExp: "/agreements/v",
 			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
 				"POST": handlers.CreateAgreement,
@@ -26,42 +32,6 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/agreements/:id",
 			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
 				"GET": handlers.GetLatestAgreement,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/payment/:paymentID/status",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"PUT": handlers.UpdatePaymentStatus,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/payment/:paymentID",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"PUT": handlers.UpdatePayment,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/payment/",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"POST": handlers.CreatePayment,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/work_item/:workItemID/tasks",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"PUT": handlers.UpdateTasks,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/work_item/:workItemID",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"PUT": handlers.UpdateWorkItem,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/v/:versionID/status",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"POST": handlers.CreateAgreementStatus,
 			},
 		},
 		urlrouter.Route{
@@ -86,12 +56,6 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/agreements/v/:id/owners",
 			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
 				"GET": handlers.GetVersionOwner,
-			},
-		},
-		urlrouter.Route{
-			PathExp: "/agreements/v/:id/archive",
-			Dest: map[string]func(map[string]interface{}, []byte, string) ([]byte, error, int){
-				"POST": handlers.ArchiveAgreement,
 			},
 		},
 	},

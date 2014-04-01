@@ -38,7 +38,5 @@ func Close() {
 	FindArchivedByClientID.Close()
 	DeleteAgreement.Close()
 	FindLiveVersions.Close()
-	UpsertStatus.Close()
-	GetStatusHistory.Close()
 	DB.Close()
 }

@@ -11,41 +11,32 @@ import (
 )
 
 type Agreement struct {
-	AgreementID         string        `json:"agreementID,omitempty"`
-	VersionID           string        `json:"versionID,omitempty"` //tracks agreements across versions
-	Version             int           `json:"version"`
-	ClientID            string        `json:"clientID"`
-	FreelancerID        string        `json:"freelancerID"`
-	Title               string        `json:"title"`
-	ProposedServices    string        `json:"proposedServices"`
-	PaymentSchedule     string        `json:"paymentSchedule"`
-	Tasks               Tasks         `json:"workItems,omitempty"`
-	Payments            Payments      `json:"payments"`
-	StatusHistory       statusHistory `json:"statusHistory"`
-	LastModified        time.Time     `json:"lastModified"`
-	Archived            bool          `json:"archived"`
-	Final               bool          `json:"final"`
-	Draft               bool          `json:"draft"`
-	DraftCreatorID      string        `json:"draftCreatorID"`
-	CurrentStatus       *Status       `json:"currentStatus"`
-	AcceptsCreditCard   bool          `json:"acceptsCreditCard"`
-	AcceptsBankTransfer bool          `json:"acceptsBankTransfer"`
+	AgreementID         string    `json:"agreementID,omitempty"`
+	VersionID           string    `json:"versionID,omitempty"` //tracks agreements across versions
+	Version             int       `json:"version"`
+	ClientID            string    `json:"clientID"`
+	FreelancerID        string    `json:"freelancerID"`
+	Title               string    `json:"title"`
+	ProposedServices    string    `json:"proposedServices"`
+	LastModified        time.Time `json:"lastModified"`
+	LastAction          *Action   `json:"lastAction"`
+	LastSubAction       *Action   `json:"lastSubAction"`
+	AcceptsCreditCard   bool      `json:"acceptsCreditCard"`
+	AcceptsBankTransfer bool      `json:"acceptsBankTransfer"`
+	Archived            bool      `json:"archived"`
 }
 
 func NewAgreement() *Agreement {
 	id, _ := uuid.NewV4()
 	return &Agreement{
-		VersionID:     id.String(),
-		StatusHistory: nil,
-		Version:       0, //agreement doesn't get a version number until it has been submitted
-		AgreementID:   id.String(),
-		Draft:         true,
+		VersionID:   id.String(),
+		Version:     0, //agreement doesn't get a version number until it has been submitted
+		AgreementID: id.String(),
 	}
 }
 
 func (a *Agreement) Save() (err error) {
 	a.LastModified = time.Now()
-	a.StatusHistory = nil
 
 	jsonByte, _ := json.Marshal(a)
 	r, err := DB.UpsertAgreement.Query(a.VersionID, string(jsonByte))
@@ -160,13 +151,6 @@ func (agreement *Agreement) ArchiveOtherVersions() error {
 	return nil
 }
 
-func (a *Agreement) SetDraftCreatorID() {
-	a.DraftCreatorID = a.FreelancerID
-	if a.FreelancerID == "" {
-		a.DraftCreatorID = a.ClientID
-	}
-}
-
 func (a *Agreement) SetRecipient(id string) {
 	//assumes that one of these fields (clientID or freelancerID) is set before the recipient
 	if a.ClientID == "" {
@@ -177,8 +161,9 @@ func (a *Agreement) SetRecipient(id string) {
 }
 
 func (a *Agreement) SetAsCompleted() {
-	a.Archived = true
-	a.Final = true
+	a.LastAction = new(Action)
+	a.LastAction.Name = ActionCompleted
+	a.LastAction.Date = time.Now()
 }
 
 func dbRowsToAgreements(r *sql.Rows) (agreements []*Agreement, err error) {
