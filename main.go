@@ -130,6 +130,7 @@ func route(worker mdp.Worker, shutChan chan bool, wg sync.WaitGroup) {
 			reply = [][]byte{d}
 			continue
 		}
+		log.Println(string(jsonData))
 		resp := &Resp{jsonData, statusCode}
 		d, _ := json.Marshal(resp)
 		reply = [][]byte{d}

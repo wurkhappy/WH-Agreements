@@ -46,7 +46,6 @@ func GetAgreement(params map[string]interface{}, body []byte, userID string) ([]
 func FindUserAgreements(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
 	usrID := params["id"].(string)
 	usersAgrmnts, _ := models.FindAgreementByUserID(usrID)
-	fmt.Println(usersAgrmnts)
 
 	displayData, _ := json.Marshal(usersAgrmnts)
 	return displayData, nil, http.StatusOK
