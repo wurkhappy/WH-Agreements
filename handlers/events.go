@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/streadway/amqp"
+	"github.com/wurkhappy/WH-Agreements/models"
 	"log"
+	"net/http"
+	"time"
 )
 
 type Event struct {
@@ -48,13 +53,55 @@ func (e *Event) PublishOnChannel(ch *amqp.Channel) {
 }
 
 func getChannel() *amqp.Channel {
-	ch, err := connection.Channel()
-	if ch == nil {
-		dialRMQ()
-		ch, err = connection.Channel()
-	}
+	ch, err := Connection.Channel()
 	if err != nil {
-		log.Print(err.Error())
+		dialRMQ()
+		ch, err = Connection.Channel()
+		if err != nil {
+			log.Print(err.Error())
+		}
 	}
+
 	return ch
+}
+
+func PaymentAccepted(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	return updatePaymentAction(body, "accepted")
+}
+
+func PaymentSubmitted(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	return updatePaymentAction(body, "submitted")
+}
+
+func updatePaymentAction(body []byte, actionName string) ([]byte, error, int) {
+	var message struct {
+		UserID    string `json:"userID"`
+		VersionID string `json:"versionID"`
+		Date      time.Time
+	}
+	json.Unmarshal(body, &message)
+	action := new(models.Action)
+	action.Name = actionName
+	action.Type = "payment"
+	action.Date = message.Date
+	action.UserID = message.UserID
+
+	var agreement *models.Agreement
+	agreement, err := models.FindAgreementByVersionID(message.VersionID)
+	if err != nil {
+		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	}
+
+	agreement.LastSubAction = action
+
+	if action.Name == "accepted" && agreement.LastAction.Name != "accepted" {
+		agreement.LastAction = models.AcceptedActionForUser(message.UserID)
+	}
+
+	err = agreement.Save()
+	if err != nil {
+		return nil, fmt.Errorf("Error saving agreement", err.Error()), http.StatusBadRequest
+	}
+
+	return nil, nil, http.StatusOK
 }

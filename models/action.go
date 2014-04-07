@@ -26,17 +26,17 @@ func CreatedActionForUser(userID string) *Action {
 
 func SubmittedActionForUser(userID string) *Action {
 	action := createActionForUser(userID)
-	action.Name = ActionCreated
+	action.Name = ActionSubmitted
 	return action
 }
 func CompletedActionForUser(userID string) *Action {
 	action := createActionForUser(userID)
-	action.Name = ActionCreated
+	action.Name = ActionCompleted
 	return action
 }
 func AcceptedActionForUser(userID string) *Action {
 	action := createActionForUser(userID)
-	action.Name = ActionCreated
+	action.Name = ActionAccepted
 	return action
 }
 

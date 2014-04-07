@@ -7,7 +7,8 @@ import (
 	"net/http"
 )
 
-func CreateAgreement(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	userID := params["userID"].(string)
 	agreement := models.NewAgreement()
 
 	err := json.Unmarshal(body, &agreement)
@@ -31,7 +32,7 @@ func CreateAgreement(params map[string]interface{}, body []byte, userID string) 
 
 }
 
-func GetAgreement(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func GetAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	var agreement *models.Agreement
 	agreement, err := models.FindAgreementByVersionID(id)
@@ -43,15 +44,15 @@ func GetAgreement(params map[string]interface{}, body []byte, userID string) ([]
 	return a, nil, http.StatusOK
 }
 
-func FindUserAgreements(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
-	usrID := params["id"].(string)
-	usersAgrmnts, _ := models.FindAgreementByUserID(usrID)
+func FindUserAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	userID := params["id"].(string)
+	usersAgrmnts, _ := models.FindAgreementByUserID(userID)
 
 	displayData, _ := json.Marshal(usersAgrmnts)
 	return displayData, nil, http.StatusOK
 }
 
-func FindUserArchivedAgreements(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func FindUserArchivedAgreements(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var usersAgrmnts []*models.Agreement
 	usrID := params["id"].(string)
 	clientAgrmnts, _ := models.FindArchivedByClientID(usrID)
@@ -63,7 +64,7 @@ func FindUserArchivedAgreements(params map[string]interface{}, body []byte, user
 	return displayData, nil, http.StatusOK
 }
 
-func UpdateAgreement(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func UpdateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	var reqData struct {
 		ClientEmail string `json:"clientEmail"`
@@ -91,7 +92,7 @@ func UpdateAgreement(params map[string]interface{}, body []byte, userID string) 
 
 }
 
-func DeleteAgreement(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func DeleteAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	err := models.DeleteAgreementWithVersionID(id)
 	if err != nil {
@@ -101,7 +102,7 @@ func DeleteAgreement(params map[string]interface{}, body []byte, userID string) 
 	return nil, nil, http.StatusOK
 }
 
-func GetAgreementOwner(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func GetAgreementOwner(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	a, err := models.FindLatestAgreementByID(id)
 	if err != nil {
@@ -119,7 +120,7 @@ func GetAgreementOwner(params map[string]interface{}, body []byte, userID string
 	return jsonData, nil, http.StatusOK
 }
 
-func GetVersionOwner(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func GetVersionOwner(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	a, err := models.FindAgreementByVersionID(id)
 	if err != nil {
@@ -137,7 +138,7 @@ func GetVersionOwner(params map[string]interface{}, body []byte, userID string) 
 	return jsonData, nil, http.StatusOK
 }
 
-func GetLatestAgreement(params map[string]interface{}, body []byte, userID string) ([]byte, error, int) {
+func GetLatestAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	id := params["id"].(string)
 	a, err := models.FindLatestAgreementByID(id)
 	if err != nil {
