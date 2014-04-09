@@ -25,7 +25,7 @@ func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error,
 
 	a, _ := json.Marshal(agreement)
 
-	events := Events{&Event{"created.agreement", a}}
+	events := Events{&Event{"agreement.created", a}}
 	go events.Publish()
 
 	return a, nil, http.StatusOK

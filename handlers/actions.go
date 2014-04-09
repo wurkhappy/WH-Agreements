@@ -20,7 +20,6 @@ func UpdateAction(params map[string]interface{}, body []byte) ([]byte, error, in
 	json.Unmarshal(body, &action)
 	action.Date = time.Now()
 	action.UserID = params["userID"].(string)
-	fmt.Println(action)
 
 	agreement.LastAction = action
 
@@ -35,6 +34,22 @@ func UpdateAction(params map[string]interface{}, body []byte) ([]byte, error, in
 		return nil, fmt.Errorf("Error saving agreement", err.Error()), http.StatusBadRequest
 	}
 
+	go createAndSendEvents(body, agreement)
+
 	a, _ := json.Marshal(action)
 	return a, nil, http.StatusOK
+}
+
+func createAndSendEvents(body []byte, agreement *models.Agreement) {
+	var m map[string]interface{}
+	json.Unmarshal(body, &m)
+	data := map[string]interface{}{
+		"versionID": agreement.VersionID,
+		"message":   m["message"],
+		"userID":    agreement.LastAction.UserID,
+		"date":      agreement.LastAction.Date,
+	}
+	j, _ := json.Marshal(data)
+	events := Events{&Event{"agreement." + agreement.LastAction.Name, j}}
+	events.Publish()
 }
