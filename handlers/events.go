@@ -32,7 +32,9 @@ func (e *Event) PublishOnChannel(ch *amqp.Channel) {
 		defer ch.Close()
 	}
 
-	ch.ExchangeDeclare(
+	log.Println("Publish event:", e.Name, config.MainExchange)
+
+	err := ch.ExchangeDeclare(
 		config.MainExchange, // name
 		"topic",             // type
 		true,                // durable
@@ -41,8 +43,11 @@ func (e *Event) PublishOnChannel(ch *amqp.Channel) {
 		false,               // noWait
 		nil,                 // arguments
 	)
+	if err != nil {
+		log.Println(err)
+	}
 
-	ch.Publish(
+	err = ch.Publish(
 		config.MainExchange, // exchange
 		e.Name,              // routing key
 		false,               // mandatory
@@ -51,6 +56,9 @@ func (e *Event) PublishOnChannel(ch *amqp.Channel) {
 			ContentType: "text/plain",
 			Body:        e.Body,
 		})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func getChannel() *amqp.Channel {
