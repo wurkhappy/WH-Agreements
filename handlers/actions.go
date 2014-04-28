@@ -25,8 +25,9 @@ func UpdateAction(params map[string]interface{}, body []byte) ([]byte, error, in
 
 	if action.Name == models.ActionCompleted {
 		agreement.Archived = true
-	} else if action.Name == models.ActionSubmitted {
+	} else if action.Name == models.ActionSubmitted || action.Name == models.ActionUpdated {
 		agreement.Version += 1
+		agreement.ArchiveOtherVersions()
 	}
 
 	err = agreement.Save()

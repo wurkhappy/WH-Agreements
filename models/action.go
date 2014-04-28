@@ -16,6 +16,7 @@ var (
 	ActionSubmitted string = "submitted"
 	ActionCompleted string = "completed"
 	ActionAccepted  string = "accepted"
+	ActionUpdated   string = "updated"
 )
 
 func CreatedActionForUser(userID string) *Action {
