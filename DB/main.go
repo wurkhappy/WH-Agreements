@@ -38,5 +38,6 @@ func Close() {
 	FindArchivedByClientID.Close()
 	DeleteAgreement.Close()
 	FindLiveVersions.Close()
+	FindAgreementWithVersionNumber.Close()
 	DB.Close()
 }

@@ -68,6 +68,15 @@ func FindAgreementByVersionID(id string) (a *Agreement, err error) {
 	json.Unmarshal([]byte(s), &a)
 	return a, nil
 }
+func FindAgreementByVersionNumber(id string, version int) (a *Agreement, err error) {
+	var s string
+	err = DB.FindAgreementWithVersionNumber.QueryRow(id, version).Scan(&s)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal([]byte(s), &a)
+	return a, nil
+}
 
 func FindLiveAgreementsByClientID(id string) (agreements []*Agreement, err error) {
 	r, err := DB.FindLiveAgreementsByClientID.Query(id)

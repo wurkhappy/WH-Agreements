@@ -16,6 +16,7 @@ var FindArchivedByFreelancerID *sql.Stmt
 var FindArchivedByClientID *sql.Stmt
 var DeleteAgreement *sql.Stmt
 var FindLiveVersions *sql.Stmt
+var FindAgreementWithVersionNumber *sql.Stmt
 
 func CreateStatements() {
 	var err error
@@ -65,6 +66,11 @@ func CreateStatements() {
 	}
 
 	DeleteAgreement, err = DB.Prepare("DELETE FROM agreement WHERE id = $1")
+	if err != nil {
+		panic(err)
+	}
+
+	FindAgreementWithVersionNumber, err = DB.Prepare("SELECT data FROM agreement WHERE data->>'agreementID' = $1 AND data->>'version' = $2")
 	if err != nil {
 		panic(err)
 	}

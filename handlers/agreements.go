@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/wurkhappy/WH-Agreements/models"
 	"net/http"
+	"strconv"
 )
 
 func CreateAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
@@ -139,10 +140,22 @@ func GetVersionOwner(params map[string]interface{}, body []byte) ([]byte, error,
 }
 
 func GetLatestAgreement(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	fmt.Println(params)
 	id := params["id"].(string)
-	a, err := models.FindLatestAgreementByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+	var err error
+	var a *models.Agreement
+	if _, ok := params["version"]; ok {
+		versionString := params["version"].([]string)[0]
+		version, _ := strconv.Atoi(versionString)
+		a, err = models.FindAgreementByVersionNumber(id, version)
+		if err != nil {
+			return nil, fmt.Errorf("Error finding agreement %s", err), http.StatusBadRequest
+		}
+	} else {
+		a, err = models.FindLatestAgreementByID(id)
+		if err != nil {
+			return nil, fmt.Errorf("%s", "Error finding agreement"), http.StatusBadRequest
+		}
 	}
 
 	jsonData, _ := json.Marshal(a)
